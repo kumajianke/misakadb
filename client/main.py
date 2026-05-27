@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import sys
 
 from network.command_send import commandSend
@@ -27,7 +26,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     command_send = commandSend(cli)
-    server_recv = asyncio.run(command_send.init_command())
+    server_recv = command_send.init_command()
 
     if mode in ["shell", "sh", "s"]:
         while True:
