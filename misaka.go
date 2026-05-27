@@ -11,7 +11,9 @@ import (
 )
 
 func main() {
-	fmt.Println("\r\nMisakaDB Service V0.0.1. \r\n")
+	fmt.Println()
+	fmt.Println("MisakaDB Service V0.0.1.")
+	fmt.Println()
 
 	// 解析命令行参数
 	port := flag.Int("port", 10032, "服务端口")
@@ -21,6 +23,7 @@ func main() {
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo *misaka_network.ServiceInfo
+
 	if *configs == "" {
 		// 从命令行加载
 		serviceInfo = misaka_network.NewServiceInfo(port, *address)
