@@ -30,7 +30,7 @@ func main() {
 		*configs = "misaka.yaml"
 		cfg, err := config.InitGlobalMisakaConfigure(*configs)
 		if err != nil {
-			clilog.Error("缺省配置文件失败，请确认misakadb的根目录有misaka.yaml文件:", err)
+			clilog.Error("缺省配置文件失败, 请确认misakadb的根目录有misaka.yaml文件:", err)
 			os.Exit(1)
 		}
 		cfg.Network.Address = *address

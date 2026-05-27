@@ -10,6 +10,7 @@ type NetworkConfigure struct {
 	Address    string `yaml:"address"`
 	MaxConn    int    `yaml:"max_conn"`
 	RetryCount int    `yaml:"retry_count"`
+	RetryDelay int    `yaml:"retry_delay"`
 }
 
 type ServiceConfigure struct {

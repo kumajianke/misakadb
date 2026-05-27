@@ -2,9 +2,9 @@ package active
 
 import (
 	"encoding/binary"
-	"errors"
-	"io"
 	"misakadb/clilog"
+	onces "misakadb/misaka_network/Onces"
+	sockshare "misakadb/misaka_network/SockShare"
 	"net"
 )
 
@@ -21,25 +21,18 @@ func getServiceConnHandler(conn net.Conn) *ServiceConnHandler {
 }
 
 func (handler *ServiceConnHandler) recv() ([]byte, error) {
+
 	conn := *(handler.Conn)
 
-	len_recv := make([]byte, 4)
-	_, err_len := io.ReadFull(conn, len_recv)
-	if err_len != nil {
-		clilog.Error("bad recv from conn " + conn.RemoteAddr().String())
-		return nil, errors.New("bad recv from conn" + err_len.Error())
-
-	}
-	len_number := binary.BigEndian.Uint32(len_recv)
-
-	bytes_lst := make([]byte, len_number)
-	_, err := io.ReadFull(conn, bytes_lst)
+	bytes_lst, err := sockshare.RecvWithHeart(conn)
 
 	if err != nil {
-		clilog.Error("bad recv from conn " + conn.RemoteAddr().String())
-		return nil, errors.New("bad recv from conn" + err.Error())
-
+		// conn.Close()
+		onces.NewSafeConn(conn).ConnClose()
+		clilog.Error("connHandler recv error:", err)
+		return nil, err
 	}
+
 	return bytes_lst, nil
 }
 

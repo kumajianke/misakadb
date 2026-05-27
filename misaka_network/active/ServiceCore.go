@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"misakadb/clilog"
 	"misakadb/misaka_network"
+	onces "misakadb/misaka_network/Onces"
 	"net"
 	"strconv"
 )
@@ -17,7 +18,7 @@ func NewServiceCore(serviceInfo *misaka_network.ServiceInfo) *ServiceCore {
 }
 
 func (serviceCore *ServiceCore) Close(conn net.Conn) error {
-	return conn.Close()
+	return onces.NewSafeConn(conn).ConnClose()
 }
 
 func (serviceCore *ServiceCore) Run() error {
