@@ -9,15 +9,14 @@ import (
 
 type ServiceCore struct {
 	ServiceInfo *misaka_network.ServiceInfo
-	connecter   net.Conn
 }
 
 func NewServiceCore(serviceInfo *misaka_network.ServiceInfo) *ServiceCore {
 	return &ServiceCore{ServiceInfo: serviceInfo}
 }
 
-func (serviceCore *ServiceCore) Close() error {
-	return serviceCore.connecter.Close()
+func (serviceCore *ServiceCore) Close(conn net.Conn) error {
+	return conn.Close()
 }
 
 func (serviceCore *ServiceCore) Run() error {
@@ -38,11 +37,11 @@ func (serviceCore *ServiceCore) Run() error {
 		}
 		clilog.Info("client connected:", conn.RemoteAddr().String())
 
-		serviceCore.connecter = conn
 		go serviceCore.handlerConn(conn)
 	}
 }
 
 func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
+	defer serviceCore.Close(conn)
 
 }

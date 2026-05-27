@@ -24,7 +24,6 @@ func main() {
 	serviceCore := active.NewServiceCore(serviceInfo)
 	err := serviceCore.Run()
 
-	defer serviceCore.Close()
 	if err != nil {
 		clilog.Error("服务运行失败:", err)
 	}
