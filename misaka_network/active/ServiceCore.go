@@ -3,6 +3,7 @@ package active
 import (
 	"fmt"
 	"misakadb/clilog"
+	"misakadb/config"
 	"misakadb/misaka_network"
 	onces "misakadb/misaka_network/Onces"
 	"net"
@@ -18,7 +19,7 @@ func NewServiceCore(serviceInfo *misaka_network.ServiceInfo) *ServiceCore {
 }
 
 func (serviceCore *ServiceCore) Close(conn net.Conn) error {
-	return onces.NewSafeConn(conn).ConnClose()
+	return conn.Close()
 }
 
 func (serviceCore *ServiceCore) Run() error {
@@ -31,20 +32,36 @@ func (serviceCore *ServiceCore) Run() error {
 	defer listener.Close()
 	clilog.Success("listening on", address)
 
+	networkConfig := config.GetGlobalNetworkConfigure()
+	maxConn := 1000
+	if networkConfig != nil && networkConfig.MaxConn > 0 {
+		maxConn = networkConfig.MaxConn
+	}
+	sem := make(chan struct{}, maxConn)
+
 	for {
-		conn, err := listener.Accept()
+		rawConn, err := listener.Accept()
 		if err != nil {
 			clilog.Warning("accept error:", err)
 			continue
 		}
-		clilog.Info("client connected:", conn.RemoteAddr().String())
+		conn := onces.NewSafeConn(rawConn)
 
-		go serviceCore.handlerConn(conn)
+		select {
+		case sem <- struct{}{}:
+			go func(c net.Conn) {
+				defer func() { <-sem }()
+				serviceCore.handlerConn(c)
+			}(conn)
+		default:
+			clilog.Warning("server full, rejecting connection:", conn.RemoteAddr().String())
+			conn.Close()
+		}
 	}
 }
 
 func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
-	defer serviceCore.Close(conn)
+	defer onces.NewSafeConn(conn).ConnClose()
 
 	connHandler := getServiceConnHandler(conn)
 
@@ -52,11 +69,10 @@ func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
 		command, err := connHandler.recv()
 		if err != nil {
 			if connHandler.ErrorCounter > 3 {
-				serviceCore.Close(conn)
+				onces.NewSafeConn(conn).ConnClose()
 				return
 			}
 			connHandler.ErrorCounter++
-			clilog.Error("connHandler recv error:", err)
 			continue
 		}
 

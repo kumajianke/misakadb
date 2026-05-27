@@ -4,9 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"misakadb/clilog"
 	"misakadb/config"
-	onces "misakadb/misaka_network/Onces"
 	"net"
 	"os"
 	"time"
@@ -40,33 +38,31 @@ func RecvWithHeart(conn net.Conn) ([]byte, error) {
 			if errors.Is(err_len, os.ErrDeadlineExceeded) {
 				errorRecvCounter++
 				if errorRecvCounter > retryCount {
-					clilog.Error("can not recv any data.")
-					onces.NewSafeConn(conn).ConnClose()
-					return nil, errors.New("can not recv any data.")
+					return nil, errors.New("can not recv any data")
 				}
-				clilog.Warning("recv deadline exceeded")
 				continue
 			}
 			// 其他错误
-			clilog.Error("bad recv step 1 from conn " + conn.RemoteAddr().String())
-			onces.NewSafeConn(conn).ConnClose()
 			return nil, errors.New("bad recv step 1 from conn " + err_len.Error())
 		}
 		len_number := binary.BigEndian.Uint32(recv_len)
 		errorRecvCounter = 0 // 成功就将重试次数清空
 
+		// 最大载荷检查避免OOM
+		const MaxPayloadSize = 16 * 1024 * 1024 // 16MB
+		if len_number > MaxPayloadSize {
+			return nil, errors.New("payload too large")
+		}
+
 		// 获取输入的类型
 		recv_type := make([]byte, 1)
 		_, err_type := io.ReadFull(conn, recv_type)
 		if err_type != nil {
-			clilog.Error("bad recv step 2 from conn " + conn.RemoteAddr().String())
-			onces.NewSafeConn(conn).ConnClose()
 			return nil, errors.New("bad recv step 2 from conn " + err_type.Error())
 		}
 
 		if recv_type[0] == 0x01 {
 			// 这个只是我们的心跳包 我们继续等待数据包
-			clilog.Info("recv heartbeat from conn " + conn.RemoteAddr().String())
 			continue
 		}
 
@@ -75,8 +71,6 @@ func RecvWithHeart(conn net.Conn) ([]byte, error) {
 		_, err := io.ReadFull(conn, bytes_lst)
 
 		if err != nil {
-			clilog.Error("bad recv from conn " + conn.RemoteAddr().String())
-			onces.NewSafeConn(conn).ConnClose()
 			return nil, errors.New("bad recv from conn " + err.Error())
 		}
 

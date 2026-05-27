@@ -2,7 +2,6 @@ package active
 
 import (
 	"encoding/binary"
-	"misakadb/clilog"
 	onces "misakadb/misaka_network/Onces"
 	sockshare "misakadb/misaka_network/SockShare"
 	"net"
@@ -27,9 +26,7 @@ func (handler *ServiceConnHandler) recv() ([]byte, error) {
 	bytes_lst, err := sockshare.RecvWithHeart(conn)
 
 	if err != nil {
-		// conn.Close()
 		onces.NewSafeConn(conn).ConnClose()
-		clilog.Error("connHandler recv error:", err)
 		return nil, err
 	}
 

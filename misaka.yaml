@@ -6,6 +6,6 @@ network:
   retry_delay: 30
 
 service:
-  version: "0.0.1"
+  version: "0.0.2"
   allow_command:
     - get-service-info

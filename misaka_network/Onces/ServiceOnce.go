@@ -1,51 +1,32 @@
 package onces
 
 import (
-	"misakadb/clilog"
 	"net"
 	"sync"
 )
 
-var (
-	cache_safe_conn       map[net.Conn]*SafeConn = make(map[net.Conn]*SafeConn)
-	cache_safe_conn_mutex sync.Mutex
-)
-
 type SafeConn struct {
-	conn net.Conn
+	net.Conn
 	once sync.Once
 }
 
-func (sc *SafeConn) ConnClose() error {
-	defer func() {
-		cache_safe_conn_mutex.Lock()
-		if sc == cache_safe_conn[sc.conn] {
-			delete(cache_safe_conn, sc.conn)
-		}
-		cache_safe_conn_mutex.Unlock()
-	}()
-
+func (sc *SafeConn) Close() error {
 	var err error
 	sc.once.Do(func() {
-		if sc.conn != nil {
-			clilog.Info("close conn ", sc.conn.RemoteAddr().String())
-			err = sc.conn.Close()
-		} else {
-			clilog.Warning("get nil conn ")
+		if sc.Conn != nil {
+			err = sc.Conn.Close()
 		}
 	})
 	return err
 }
 
+func (sc *SafeConn) ConnClose() error {
+	return sc.Close()
+}
+
 func NewSafeConn(conn net.Conn) *SafeConn {
-	cache_safe_conn_mutex.Lock()
-	defer cache_safe_conn_mutex.Unlock()
-
-	if sc, ok := cache_safe_conn[conn]; ok {
+	if sc, ok := conn.(*SafeConn); ok {
 		return sc
-	} // 缓存命中
-
-	sc := &SafeConn{conn: conn}
-	cache_safe_conn[conn] = sc // 回填数据
-	return sc
+	}
+	return &SafeConn{Conn: conn}
 }
