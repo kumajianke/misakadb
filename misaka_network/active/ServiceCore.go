@@ -1,6 +1,7 @@
 package active
 
 import (
+	"fmt"
 	"misakadb/clilog"
 	"misakadb/misaka_network"
 	"net"
@@ -26,8 +27,8 @@ func (serviceCore *ServiceCore) Run() error {
 		clilog.Error("listen error:", err)
 		return err
 	}
-	clilog.Success("listening on", address)
 	defer listener.Close()
+	clilog.Success("listening on", address)
 
 	for {
 		conn, err := listener.Accept()
@@ -43,5 +44,23 @@ func (serviceCore *ServiceCore) Run() error {
 
 func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
 	defer serviceCore.Close(conn)
+
+	connHandler := getServiceConnHandler(conn)
+
+	for {
+		command, err := connHandler.recv()
+		if err != nil {
+			if connHandler.ErrorCounter > 3 {
+				serviceCore.Close(conn)
+				return
+			}
+			connHandler.ErrorCounter++
+			clilog.Error("connHandler recv error:", err)
+			continue
+		}
+
+		clilog.Info(fmt.Sprintf("[%s] command: %s", conn.RemoteAddr().String(), string(command)))
+
+	}
 
 }

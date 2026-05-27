@@ -1,0 +1,9 @@
+network:
+  port: 8080
+  address: 0.0.0.0
+  max_conn: 1000
+  retry_count: 3
+service:
+  version: "0.0.1"
+  allow_command:
+    - get-service-info
