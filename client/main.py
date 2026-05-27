@@ -20,7 +20,11 @@ if __name__ == "__main__":
     
     
     cli = sock.clientCore(address, port)
-    cli.connect()
+    connect_err = cli.connect()
+    if connect_err is not None:
+        print(f"连接失败: {connect_err}", file=sys.stderr)
+        cli.s.close()
+        sys.exit(1)
 
     command_send = commandSend(cli)
     server_recv = asyncio.run(command_send.init_command())
