@@ -31,18 +31,45 @@ class clientCore:
         return last_err # 3 次都失败，返回最后的错误
 
     def send_str(self, data:str):
-        self.s.send(data.encode("utf-8"))
+        data_bytes = data.encode("utf-8")
+        self.send_bytes(data_bytes)
     
     def recv_str(self):
-        data = self.s.recv(1024)
+        data = self.recv_bytes()
         return data.decode("utf-8")
     
-    def send_bytes(self, data:bytes):
-        self.s.send(data)
+    def send_bytes(self, data:bytes, msg_type:int=0x00):
+        # 4-byte length (Big Endian)
+        length_bytes = len(data).to_bytes(4, byteorder='big')
+        # 1-byte message type
+        type_byte = msg_type.to_bytes(1, byteorder='big')
+        # send length + type + data
+        self.s.sendall(length_bytes + type_byte + data)
+        
+    def send_heartbeat(self):
+        # 发送心跳包: 数据长度为0，类型为0x01
+        self.send_bytes(b"", msg_type=0x01)
         
     def recv_bytes(self):
-        data = self.s.recv(1024)
-        return data
+        # read 4-byte length
+        length_bytes = self._recv_exact(4)
+        if not length_bytes:
+            return b""
+        length = int.from_bytes(length_bytes, byteorder='big')
+        
+        # read length bytes of data
+        if length > 0:
+            return self._recv_exact(length)
+        return b""
+
+    def _recv_exact(self, n: int) -> bytes:
+        data = bytearray()
+        while len(data) < n:
+            packet = self.s.recv(n - len(data))
+            if not packet:
+                return b""
+            data.extend(packet)
+        return bytes(data)
 
     def send_command(self, command:str):
         self.send_str(command)

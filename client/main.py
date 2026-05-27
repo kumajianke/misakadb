@@ -46,4 +46,9 @@ if __name__ == "__main__":
                 cli.s.close()
                 print("bye~")
                 sys.exit(0)
+
+            if commands:
+                res = cli.send_command(commands)
+                print(res.decode('utf-8', errors='replace'))
+
         
