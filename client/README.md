@@ -68,10 +68,6 @@ print(service_info)
         "max_conn": 2,
         "retry_count": 3,
         "retry_delay": 30
-    },
-    "service": {
-        "version": "0.0.3",
-        "allow_command": ["get-service-info"]
     }
 }
 ```

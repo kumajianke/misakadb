@@ -37,8 +37,7 @@ network:
 
 service:
   version: "0.0.3"
-  allow_command:
-    - get-service-info
+
 ```
 
 >  **| network**

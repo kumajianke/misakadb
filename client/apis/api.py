@@ -269,16 +269,7 @@ class MisakaDBClient:
             return service_info.get('service', {}).get('version')
         return None
     
-    def get_allowed_commands(self) -> Optional[List[str]]:
-        """获取服务器允许的命令列表
-        
-        Returns:
-            Optional[List[str]]: 允许的命令列表
-        """
-        service_info = self.get_service_info()
-        if service_info:
-            return service_info.get('service', {}).get('allow_command', [])
-        return None
+
     
     def is_command_allowed(self, command: str) -> bool:
         """检查命令是否被服务器允许

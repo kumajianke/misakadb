@@ -14,6 +14,5 @@ type NetworkConfigure struct {
 }
 
 type ServiceConfigure struct {
-	Version      string   `yaml:"version" json:"version"`
-	AllowCommand []string `yaml:"allow_command" json:"allow_command"`
+	Version string `yaml:"version" json:"version"`
 }

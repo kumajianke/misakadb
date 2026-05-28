@@ -28,7 +28,6 @@ DEFAULT_LABELS = {
     "network.retry_count": "重试次数",
     "network.retry_delay": "重试延迟(秒)",
     "service.version": "服务版本",
-    "service.allow_command": "允许命令",
 }
 
 DEFAULT_ORDER = [
@@ -38,7 +37,6 @@ DEFAULT_ORDER = [
     "network.max_conn",
     "network.retry_count",
     "network.retry_delay",
-    "service.allow_command",
 ]
 
 
