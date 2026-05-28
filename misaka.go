@@ -6,10 +6,10 @@ import (
 	"misakadb/clilog"
 	"misakadb/config"
 	"misakadb/network"
+	"misakadb/network/RegisterCenter"
 	"misakadb/network/core"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"strings"
 )
 
@@ -31,7 +31,8 @@ func main() {
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo *network.ServiceInfo
-
+	var cfg *config.MisakaConfigure
+	var err_load_cfg error
 	if *configs == "" {
 		// 从命令行加载
 		serviceInfo = network.NewServiceInfo(port, *address, *debug)
@@ -40,11 +41,11 @@ func main() {
 			*configs = "./profiles/" + (*configs)[1:]
 		}
 
-		cfg, err := config.InitGlobalMisakaConfigure(*configs)
+		cfg, err_load_cfg = config.InitGlobalMisakaConfigure(*configs)
 
-		if err != nil {
-			clilog.Error("缺省配置文件失败, 请确认misakadb的profiles目录有misaka.yaml文件:", err)
-			os.Exit(1)
+		if err_load_cfg != nil {
+			clilog.Error("缺省配置文件失败, 请确认misakadb的profiles目录有misaka.yaml文件:", err_load_cfg)
+			return
 		}
 		printTitle(cfg)
 
@@ -52,10 +53,10 @@ func main() {
 		cfg.Network.Port = *port
 	} else {
 		// 从配置文件中加载
-		cfg, err := config.InitGlobalMisakaConfigure(*configs)
-		if err != nil {
-			clilog.Error("加载配置文件失败:", err)
-			os.Exit(1)
+		cfg, err_load_cfg = config.InitGlobalMisakaConfigure(*configs)
+		if err_load_cfg != nil {
+			clilog.Error("加载配置文件失败:", err_load_cfg)
+			return
 		}
 		serviceInfo = config.ConvertServiceInfo(cfg)
 	}
@@ -64,6 +65,8 @@ func main() {
 		go http.ListenAndServe(":6060", nil)
 		clilog.Success("pprof running on 0.0.0.0:6060")
 	}
+
+	_ = RegisterCenter.NewRegisterCenter(cfg.Network.MaxConn)
 
 	clilog.Info("\nmisakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
 	serviceCore := core.NewServiceCore(serviceInfo) // 创建服务核心

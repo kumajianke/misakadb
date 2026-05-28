@@ -1,6 +1,8 @@
+import random
 import socket
 import threading
 import time
+from uuid import uuid4
 
 from interface.status import StatusSocket
 
@@ -14,6 +16,7 @@ class clientCore:
         self.status = StatusSocket.Disconnected
         
         self.lock = threading.Lock()
+        
         
         
 
@@ -36,27 +39,31 @@ class clientCore:
         return last_err # 3 次都失败，返回最后的错误
 
     def send_str(self, data:str):
-        with self.lock:
-            data_bytes = data.encode("utf-8")
-            self.send_bytes(data_bytes)
+        
+        data_bytes = data.encode("utf-8")
+        self.send_bytes(data_bytes)
     
     def recv_str(self):
         data = self.recv_bytes()
         return data.decode("utf-8")
     
     def send_bytes(self, data:bytes, msg_type:int=0x00):
+        seq_id = random.randint(10000, 100000)
+        seq_id_bytes = seq_id.to_bytes(4, byteorder='big')
+        
         # 4-byte length (Big Endian)
         length_bytes = len(data).to_bytes(4, byteorder='big')
         # 1-byte message type
         type_byte = msg_type.to_bytes(1, byteorder='big')
         # send length + type + data
         with self.lock:
-            self.s.sendall(length_bytes + type_byte + data)
+            
+            self.s.sendall(seq_id_bytes + length_bytes + type_byte + data)
         
     def send_heartbeat(self):
         # 发送心跳包: 数据长度为0，类型为0x01
-        with self.lock:
-            self.send_bytes(b"", msg_type=0x01)
+
+        self.send_bytes(b"", msg_type=0x01)
         
     def recv_bytes(self):
         # read 4-byte length
@@ -80,8 +87,7 @@ class clientCore:
         return bytes(data)
 
     def send_command(self, command:str):
-        with self.lock:
-            self.send_str(command)
+        self.send_str(command)
         return self.recv_bytes()
     
     
