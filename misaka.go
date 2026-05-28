@@ -10,11 +10,17 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strings"
 )
 
+func printTitle(cfg *config.MisakaConfigure) {
+	title := fmt.Sprintf(" MisakaDB Service V%s ", cfg.Service.Version)
+
+	border := strings.Repeat("-", len(title)+2)
+	fmt.Printf("%s\n|%s|\n%s\n\n", border, title, border)
+}
+
 func main() {
-	fmt.Println()
-	fmt.Println("MisakaDB Service V0.0.1.")
 	fmt.Println()
 
 	// 解析命令行参数
@@ -30,12 +36,19 @@ func main() {
 	if *configs == "" {
 		// 从命令行加载
 		serviceInfo = network.NewServiceInfo(port, *address, *debug)
-		*configs = "misaka.yaml"
+		*configs = "$misaka.yaml"
+		if strings.HasPrefix(*configs, "$") {
+			*configs = "./profiles/" + (*configs)[1:]
+		}
+
 		cfg, err := config.InitGlobalMisakaConfigure(*configs)
+
 		if err != nil {
-			clilog.Error("缺省配置文件失败, 请确认misakadb的根目录有misaka.yaml文件:", err)
+			clilog.Error("缺省配置文件失败, 请确认misakadb的profiles目录有misaka.yaml文件:", err)
 			os.Exit(1)
 		}
+		printTitle(cfg)
+
 		cfg.Network.Address = *address
 		cfg.Network.Port = *port
 	} else {
