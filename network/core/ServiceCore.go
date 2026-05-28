@@ -5,18 +5,18 @@ import (
 	"misakadb/clilog"
 	"misakadb/command"
 	"misakadb/config"
-	"misakadb/misaka_network"
-	onces "misakadb/misaka_network/Onces"
-	"misakadb/misaka_network/active"
+	"misakadb/network"
+	onces "misakadb/network/Onces"
+	"misakadb/network/active"
 	"net"
 	"strconv"
 )
 
 type ServiceCore struct {
-	ServiceInfo *misaka_network.ServiceInfo
+	ServiceInfo *network.ServiceInfo
 }
 
-func NewServiceCore(serviceInfo *misaka_network.ServiceInfo) *ServiceCore {
+func NewServiceCore(serviceInfo *network.ServiceInfo) *ServiceCore {
 	return &ServiceCore{ServiceInfo: serviceInfo}
 }
 
@@ -58,6 +58,7 @@ func (serviceCore *ServiceCore) Run() error {
 		default:
 			clilog.Warning("server full, rejecting connection:", conn.RemoteAddr().String())
 			conn.Close()
+			conn = nil
 		}
 	}
 }

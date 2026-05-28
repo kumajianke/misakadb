@@ -1,9 +1,11 @@
 package command
 
 import (
+	"fmt"
+	"misakadb/clilog"
 	"misakadb/config"
-	onces "misakadb/misaka_network/Onces"
-	"misakadb/misaka_network/active"
+	onces "misakadb/network/Onces"
+	"misakadb/network/active"
 )
 
 type CommandDispatch struct {
@@ -25,5 +27,12 @@ func (dispatch *CommandDispatch) Dispatch(
 		sysConfigs := config.GetGlobalMisakaConfigure()
 		jsonStr := config.ConvertConfigureToJSON(sysConfigs)
 		serviceHandler.Send(jsonStr)
+		clilog.Info(
+			fmt.Sprintf(
+				"[%s] command `get-service-info` success",
+				(*serviceHandler.Conn).RemoteAddr().String(),
+			),
+		)
 	}
+
 }

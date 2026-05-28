@@ -130,6 +130,10 @@ class commandSend:
         end_time = time.time()
         elapsed_ms = (end_time - start_time) * 1000.0
 
+        if (server_recv.decode().startswith("error")) :
+            print(f"初始化服务信息失败: {server_recv}")
+            return server_recv
+
         json_data = json.loads(server_recv)
         self._print_fetch_layout(self._build_info_lines(json_data, elapsed_ms))
         print()

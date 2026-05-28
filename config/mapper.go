@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"misakadb/misaka_network"
+	"misakadb/network"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,19 +31,19 @@ func LoadMisakaConfigure(path string) (*MisakaConfigure, error) {
 	return cfg, nil
 }
 
-func ConvertServiceInfo(cfg *MisakaConfigure) *misaka_network.ServiceInfo {
+func ConvertServiceInfo(cfg *MisakaConfigure) *network.ServiceInfo {
 	if cfg == nil {
 		return nil
 	}
 
 	applyDefaults(cfg)
-	return &misaka_network.ServiceInfo{
+	return &network.ServiceInfo{
 		Port:    cfg.Network.Port,
 		Address: cfg.Network.Address,
 	}
 }
 
-func LoadServiceInfo(path string) (*misaka_network.ServiceInfo, error) {
+func LoadServiceInfo(path string) (*network.ServiceInfo, error) {
 	cfg, err := LoadMisakaConfigure(path)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func GetGlobalServiceConfigure() *ServiceConfigure {
 	return &globalConfigure.Service
 }
 
-func GetGlobalServiceInfo() *misaka_network.ServiceInfo {
+func GetGlobalServiceInfo() *network.ServiceInfo {
 	return ConvertServiceInfo(globalConfigure)
 }
 
@@ -100,7 +100,7 @@ func ConvertConfigureToJSON(cfg *MisakaConfigure) string {
 	applyDefaults(cfg)
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
-		return ""
+		return `server_error`
 	}
 	return string(data)
 }

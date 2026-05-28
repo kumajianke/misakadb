@@ -2,8 +2,8 @@ package active
 
 import (
 	"encoding/binary"
-	onces "misakadb/misaka_network/Onces"
-	sockshare "misakadb/misaka_network/SockShare"
+	onces "misakadb/network/Onces"
+	sockshare "misakadb/network/SockShare"
 	"net"
 )
 
