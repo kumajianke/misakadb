@@ -22,3 +22,4 @@ go run misaka.go [参数]
 
 - **address**    启动的地址簇
 - **port**            启动的端口
+- **configs**        配置文件路径

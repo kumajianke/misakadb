@@ -12,14 +12,14 @@ type ServiceConnHandler struct {
 	ErrorCounter int
 }
 
-func getServiceConnHandler(conn net.Conn) *ServiceConnHandler {
+func GetServiceConnHandler(conn net.Conn) *ServiceConnHandler {
 	return &ServiceConnHandler{
 		Conn:         &conn,
 		ErrorCounter: 0,
 	}
 }
 
-func (handler *ServiceConnHandler) recv() ([]byte, error) {
+func (handler *ServiceConnHandler) Recv() ([]byte, error) {
 
 	conn := *(handler.Conn)
 
@@ -33,7 +33,7 @@ func (handler *ServiceConnHandler) recv() ([]byte, error) {
 	return bytes_lst, nil
 }
 
-func (handler *ServiceConnHandler) send(data string) error {
+func (handler *ServiceConnHandler) Send(data string) error {
 	// 将string转换为[]byte
 	dataBytes := []byte(data)
 
@@ -46,8 +46,4 @@ func (handler *ServiceConnHandler) send(data string) error {
 	// 2. 发送数据
 	_, err := conn.Write(dataBytes)
 	return err
-}
-
-func (handler *ServiceConnHandler) commandHandler(command string) {
-	_ = command
 }

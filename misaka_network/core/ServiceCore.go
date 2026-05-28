@@ -1,11 +1,13 @@
-package active
+package core
 
 import (
 	"fmt"
 	"misakadb/clilog"
+	"misakadb/command"
 	"misakadb/config"
 	"misakadb/misaka_network"
 	onces "misakadb/misaka_network/Onces"
+	"misakadb/misaka_network/active"
 	"net"
 	"strconv"
 )
@@ -63,10 +65,10 @@ func (serviceCore *ServiceCore) Run() error {
 func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
 	defer onces.NewSafeConn(conn).ConnClose()
 
-	connHandler := getServiceConnHandler(conn)
+	connHandler := active.GetServiceConnHandler(conn)
 
 	for {
-		command, err := connHandler.recv()
+		client_command, err := connHandler.Recv()
 		if err != nil {
 			if connHandler.ErrorCounter > 3 {
 				onces.NewSafeConn(conn).ConnClose()
@@ -76,8 +78,14 @@ func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
 			continue
 		}
 
-		clilog.Info(fmt.Sprintf("[%s] command: %s", conn.RemoteAddr().String(), string(command)))
+		clilog.Info(fmt.Sprintf(
+			"[%s] command: %s",
+			conn.RemoteAddr().String(), string(client_command)),
+		)
 
+		(command.NewCommandDispatch()).Dispatch(
+			connHandler,
+			string(client_command),
+		)
 	}
-
 }

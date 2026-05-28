@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"sync"
 
@@ -89,4 +90,17 @@ func applyDefaults(cfg *MisakaConfigure) {
 	if cfg.Service.AllowCommand == nil {
 		cfg.Service.AllowCommand = []string{}
 	}
+}
+
+func ConvertConfigureToJSON(cfg *MisakaConfigure) string {
+	if cfg == nil {
+		return ""
+	}
+
+	applyDefaults(cfg)
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }

@@ -6,7 +6,7 @@ import (
 	"misakadb/clilog"
 	"misakadb/config"
 	"misakadb/misaka_network"
-	"misakadb/misaka_network/active"
+	"misakadb/misaka_network/core"
 	"os"
 )
 
@@ -46,8 +46,8 @@ func main() {
 	}
 
 	clilog.Info("misakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
-	serviceCore := active.NewServiceCore(serviceInfo) // 创建服务核心
-	err := serviceCore.Run()                          // 启动服务核心
+	serviceCore := core.NewServiceCore(serviceInfo) // 创建服务核心
+	err := serviceCore.Run()                        // 启动服务核心
 
 	if err != nil {
 		clilog.Error("服务运行失败:", err)
