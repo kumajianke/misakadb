@@ -7,7 +7,7 @@ import (
 	"misakadb/config"
 	"misakadb/network"
 	onces "misakadb/network/Onces"
-	"misakadb/network/active"
+	"misakadb/network/context"
 	"net"
 	"strconv"
 )
@@ -53,7 +53,7 @@ func (serviceCore *ServiceCore) Run() error {
 		case sem <- struct{}{}:
 			go func(c net.Conn) {
 				defer func() { <-sem }()
-				serviceCore.handlerConn(c)
+				serviceCore.contextConn(c)
 			}(conn)
 		default:
 			clilog.Warning("server full, rejecting connection:", conn.RemoteAddr().String())
@@ -63,19 +63,22 @@ func (serviceCore *ServiceCore) Run() error {
 	}
 }
 
-func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
+/**
+ * 处理连接用的上下文
+ */
+func (serviceCore *ServiceCore) contextConn(conn net.Conn) {
 	defer onces.NewSafeConn(conn).ConnClose()
 
-	connHandler := active.GetServiceConnHandler(conn)
+	ConnContext := context.GetServiceConnContext(conn)
 
 	for {
-		client_command, err := connHandler.Recv()
+		client_command, err := ConnContext.Recv()
 		if err != nil {
-			if connHandler.ErrorCounter > 3 {
+			if ConnContext.ErrorCounter > 3 {
 				onces.NewSafeConn(conn).ConnClose()
 				return
 			}
-			connHandler.ErrorCounter++
+			ConnContext.ErrorCounter++
 			continue
 		}
 
@@ -84,9 +87,14 @@ func (serviceCore *ServiceCore) handlerConn(conn net.Conn) {
 			conn.RemoteAddr().String(), string(client_command)),
 		)
 
-		(command.NewCommandDispatch()).Dispatch(
-			connHandler,
+		err = (command.NewCommandDispatch()).Dispatch(
+			ConnContext,
 			string(client_command),
 		)
+
+		if err != nil {
+			clilog.Error("dispatch error:", err)
+			return
+		}
 	}
 }

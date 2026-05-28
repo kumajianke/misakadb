@@ -1,49 +1,35 @@
 package command
 
 import (
-	"fmt"
-	"misakadb/clilog"
-	"misakadb/config"
-	onces "misakadb/network/Onces"
-	"misakadb/network/active"
+	"misakadb/network/context"
+	"reflect"
 )
 
 type CommandDispatch struct {
+	GetServiceInfo func(serviceContext *context.ServiceConnContext) error `mapper:"get-service-info"`
+	Exit           func(serviceContext *context.ServiceConnContext) error `mapper:"exit"`
 }
 
 func NewCommandDispatch() *CommandDispatch {
-	return &CommandDispatch{}
+	dispatch := &CommandDispatch{}
+	dispatch.GetServiceInfo = dispatch.ImpGetServiceInfo
+	dispatch.Exit = dispatch.ImpExit
+	return dispatch
 }
 
 func (dispatch *CommandDispatch) Dispatch(
-	serviceHandler *active.ServiceConnHandler,
+	serviceContext *context.ServiceConnContext,
 	command string,
-) {
-
-	switch command {
-	case "exit":
-		onces.NewSafeConn(*serviceHandler.Conn).ConnClose()
-	case "get-service-info":
-		sysConfigs := config.GetGlobalMisakaConfigure()
-		jsonStr := config.ConvertConfigureToJSON(sysConfigs)
-		err := serviceHandler.Send(jsonStr)
-		if err != nil {
-			clilog.Error(
-				fmt.Sprintf(
-					"[%s] command `get-service-info` failed, err: %v",
-					(*serviceHandler.Conn).RemoteAddr().String(),
-					err,
-				),
-			)
-			return
+) error {
+	dispatchValue := reflect.ValueOf(dispatch).Elem()
+	dispatchType := dispatchValue.Type()
+	for i := 0; i < dispatchType.NumField(); i++ {
+		field := dispatchType.Field(i)
+		if field.Tag.Get("mapper") == command {
+			context := dispatchValue.Field(i).Interface().(func(*context.ServiceConnContext) error)
+			return context(serviceContext)
 		}
-
-		clilog.Info(
-			fmt.Sprintf(
-				"[%s] command `get-service-info` success",
-				(*serviceHandler.Conn).RemoteAddr().String(),
-			),
-		)
 	}
 
+	return nil
 }

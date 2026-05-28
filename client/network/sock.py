@@ -1,4 +1,5 @@
 import socket
+import threading
 import time
 
 from interface.status import StatusSocket
@@ -11,6 +12,10 @@ class clientCore:
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(5)
         self.status = StatusSocket.Disconnected
+        
+        self.lock = threading.Lock()
+        
+        
 
         self.mode = []
         
@@ -31,8 +36,9 @@ class clientCore:
         return last_err # 3 次都失败，返回最后的错误
 
     def send_str(self, data:str):
-        data_bytes = data.encode("utf-8")
-        self.send_bytes(data_bytes)
+        with self.lock:
+            data_bytes = data.encode("utf-8")
+            self.send_bytes(data_bytes)
     
     def recv_str(self):
         data = self.recv_bytes()
@@ -44,11 +50,13 @@ class clientCore:
         # 1-byte message type
         type_byte = msg_type.to_bytes(1, byteorder='big')
         # send length + type + data
-        self.s.sendall(length_bytes + type_byte + data)
+        with self.lock:
+            self.s.sendall(length_bytes + type_byte + data)
         
     def send_heartbeat(self):
         # 发送心跳包: 数据长度为0，类型为0x01
-        self.send_bytes(b"", msg_type=0x01)
+        with self.lock:
+            self.send_bytes(b"", msg_type=0x01)
         
     def recv_bytes(self):
         # read 4-byte length
@@ -72,7 +80,8 @@ class clientCore:
         return bytes(data)
 
     def send_command(self, command:str):
-        self.send_str(command)
+        with self.lock:
+            self.send_str(command)
         return self.recv_bytes()
     
     

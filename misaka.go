@@ -13,21 +13,20 @@ import (
 	"strings"
 )
 
+var (
+	port    = flag.Int("port", 10032, "服务端口")
+	address = flag.String("address", "0.0.0.0", "服务地址")
+	configs = flag.String("configs", "", "配置文件路径[可选]")
+	debug   = flag.Bool("debug", false, "调试模式")
+)
+
 func printTitle(cfg *config.MisakaConfigure) {
 	title := fmt.Sprintf(" MisakaDB Service V%s ", cfg.Service.Version)
-
 	border := strings.Repeat("-", len(title)+2)
 	fmt.Printf("%s\n|%s|\n%s\n\n", border, title, border)
 }
 
 func main() {
-	fmt.Println()
-
-	// 解析命令行参数
-	port := flag.Int("port", 10032, "服务端口")
-	address := flag.String("address", "0.0.0.0", "服务地址")
-	configs := flag.String("configs", "", "配置文件路径[可选]")
-	debug := flag.Bool("debug", false, "调试模式")
 	flag.Parse()
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
@@ -66,7 +65,7 @@ func main() {
 		clilog.Success("pprof running on 0.0.0.0:6060")
 	}
 
-	clilog.Info("misakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
+	clilog.Info("\nmisakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
 	serviceCore := core.NewServiceCore(serviceInfo) // 创建服务核心
 	err := serviceCore.Run()                        // 启动服务核心
 
