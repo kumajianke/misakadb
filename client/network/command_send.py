@@ -90,9 +90,10 @@ class commandSend:
             return sum(2 if ord(c) > 127 else 1 for c in text)
 
         info_lines = [
-            "\033[1;36m Kumare @\033[1;36m MisakaDB Client\033[0m",
-            "----------------",
-            f"\033[1;36m请求耗时\033[0m{' ' * 6} : {elapsed_ms:.2f} ms",
+            "\033[1;36m  库码科技工作室",
+            "\033[1;32m  MisakaDB Client\033[0m",
+            "",
+            f"\033[1;36m请求耗时\033[{'1;32m' if round(elapsed_ms, 2) < 0.2 else '1;33m'}{' ' * 6} : {elapsed_ms:.2f} ms",
         ]
 
         for key, value in ordered_items:
