@@ -3,7 +3,9 @@ package sockshare
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
+	"misakadb/clilog"
 	"misakadb/config"
 	"net"
 	"os"
@@ -63,6 +65,7 @@ func RecvWithHeart(conn net.Conn) ([]byte, error) {
 
 		if recv_type[0] == 0x01 {
 			// 这个只是我们的心跳包 我们继续等待数据包
+			clilog.Info(fmt.Sprintf("[%s] get heartbeat of conn", conn.RemoteAddr().String()))
 			continue
 		}
 

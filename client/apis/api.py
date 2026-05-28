@@ -1,5 +1,6 @@
 import json
 import sys
+import threading
 import time
 from typing import Optional, Dict, Any, List, Union
 
@@ -7,15 +8,145 @@ from typing import Optional, Dict, Any, List, Union
 from network import sock
 
 
+class HeartbeatController:
+    def __init__(self, owner: "MisakaDBClient", interval: float) -> None:
+        self._owner = owner
+        self.interval = interval
+        self._enabled = threading.Event()
+        self._shutdown = threading.Event()
+        self._stats_lock = threading.Lock()
+        self._thread: Optional[threading.Thread] = None
+        self._attempt_count = 0
+        self._success_count = 0
+        self._failure_count = 0
+        self._last_error: Optional[str] = None
+        self._last_sent_at: Optional[float] = None
+
+    def _ensure_thread(self) -> None:
+        if self._thread is not None and self._thread.is_alive():
+            return
+
+        self._shutdown.clear()
+        self._thread = threading.Thread(
+            target=self._loop,
+            name=f"MisakaDBHeartbeat-{self._owner.host}:{self._owner.port}",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def _loop(self) -> None:
+        while not self._shutdown.is_set():
+            if not self._enabled.is_set():
+                if self._shutdown.wait(0.1):
+                    return
+                continue
+
+            if self._owner.connected and self._owner.client is not None:
+                try:
+                    with self._owner._socket_lock:
+                        if self._owner.connected and self._owner.client is not None:
+                            self._owner.client.send_heartbeat()
+                            print("send")
+                            with self._stats_lock:
+                                self._attempt_count += 1
+                                self._success_count += 1
+                                self._last_error = None
+                                self._last_sent_at = time.time()
+                except Exception as e:
+                    with self._stats_lock:
+                        self._attempt_count += 1
+                        self._failure_count += 1
+                        self._last_error = str(e)
+                    print(f"心跳发送失败: {e}", file=sys.stderr)
+                    self._owner.connected = False
+
+            if self._shutdown.wait(self.interval):
+                return
+
+    @property
+    def running(self) -> bool:
+        return self._enabled.is_set()
+
+    @property
+    def count(self) -> int:
+        with self._stats_lock:
+            return self._attempt_count
+
+    @property
+    def success_count(self) -> int:
+        with self._stats_lock:
+            return self._success_count
+
+    @property
+    def failure_count(self) -> int:
+        with self._stats_lock:
+            return self._failure_count
+
+    @property
+    def loss_rate(self) -> float:
+        with self._stats_lock:
+            if self._attempt_count == 0:
+                return 0.0
+            return self._failure_count / self._attempt_count * 100.0
+
+    @property
+    def last_error(self) -> Optional[str]:
+        with self._stats_lock:
+            return self._last_error
+
+    @property
+    def last_sent_at(self) -> Optional[float]:
+        with self._stats_lock:
+            return self._last_sent_at
+
+    def stats(self) -> Dict[str, Any]:
+        with self._stats_lock:
+            loss_rate = (
+                self._failure_count / self._attempt_count * 100.0
+                if self._attempt_count > 0 else 0.0
+            )
+            return {
+                "running": self._enabled.is_set(),
+                "interval": self.interval,
+                "count": self._attempt_count,
+                "success_count": self._success_count,
+                "failure_count": self._failure_count,
+                # 当前协议没有心跳回包确认，这里按发送失败率统计。
+                "loss_rate": loss_rate,
+                "last_error": self._last_error,
+                "last_sent_at": self._last_sent_at,
+            }
+
+    def start(self) -> None:
+        self._ensure_thread()
+        self._enabled.set()
+
+    def stop(self) -> None:
+        self._enabled.clear()
+
+    def shutdown(self) -> None:
+        self._enabled.clear()
+        self._shutdown.set()
+
+
 class MisakaDBClient:
     """MisakaDB客户端API"""
     
-    def __init__(self, host: str = "127.0.0.1", port: int = 10032):
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 10032,
+        heartbeat_interval: float = 1
+    ):
         self.host = host
         self.port = port
         self.client: Optional[sock.clientCore] = None
         self.service_info: Optional[Dict[str, Any]] = None
         self.connected = False
+        self.heartbeat_interval = heartbeat_interval
+        self._socket_lock = threading.Lock()
+        self.heart = HeartbeatController(self, heartbeat_interval)
+        self.heart.start()
         
     def connect(self, retries: int = 3, retry_delay: float = 1.0) -> bool:
         """连接到MisakaDB服务器
@@ -27,6 +158,8 @@ class MisakaDBClient:
         Returns:
             bool: 连接是否成功
         """
+        self.heart.start()
+
         for attempt in range(retries):
             try:
                 self.client = sock.clientCore(self.host, self.port)
@@ -64,7 +197,10 @@ class MisakaDBClient:
             return None
             
         try:
-            response = self.client.send_command("get-service-info")
+            with self._socket_lock:
+                if not self.connected or self.client is None:
+                    return None
+                response = self.client.send_command("get-service-info")
             self.service_info = json.loads(response)
             return self.service_info
         except json.JSONDecodeError as e:
@@ -88,7 +224,10 @@ class MisakaDBClient:
             return None
             
         try:
-            response = self.client.send_command(command)
+            with self._socket_lock:
+                if not self.connected or self.client is None:
+                    return None
+                response = self.client.send_command(command)
             
             # 尝试解析为JSON
             try:
@@ -111,8 +250,10 @@ class MisakaDBClient:
             return False
             
         try:
-            # 发送一个简单的ping命令或使用心跳
-            response = self.client.send_command("ping")
+            with self._socket_lock:
+                if not self.connected or self.client is None:
+                    return False
+                response = self.client.send_command("ping")
             return response is not None
         except:
             return False
@@ -166,11 +307,14 @@ class MisakaDBClient:
     
     def close(self) -> None:
         """关闭连接"""
-        if self.client is not None and self.client.s:
-            self.client.s.close()
+        self.heart.shutdown()
+        with self._socket_lock:
+            if self.client is not None and self.client.s:
+                self.client.s.close()
             self.client = None
             self.service_info = None
             self.connected = False
+        self.heart = HeartbeatController(self, self.heartbeat_interval)
     
     def __enter__(self):
         """上下文管理器入口"""
