@@ -27,8 +27,6 @@ func NewRegisterCenter(connectQueueSize int) *RegisterCenter {
 		return RegisterCenterInstance
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
 	RegisterCenterInstance = &RegisterCenter{
 		ConnectQueue: make(chan *ConnectMapperRow, connectQueueSize),
 	}

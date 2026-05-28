@@ -87,9 +87,7 @@ func applyDefaults(cfg *MisakaConfigure) {
 	if cfg.Network.Port == 0 {
 		cfg.Network.Port = 10032
 	}
-	if cfg.Service.AllowCommand == nil {
-		cfg.Service.AllowCommand = []string{}
-	}
+
 }
 
 func ConvertConfigureToJSON(cfg *MisakaConfigure) string {

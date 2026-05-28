@@ -58,7 +58,7 @@ class clientCore:
         # send length + type + data
         with self.lock:
             
-            self.s.sendall(seq_id_bytes + length_bytes + type_byte + data)
+            self.s.sendall( length_bytes + type_byte + data)
         
     def send_heartbeat(self):
         # 发送心跳包: 数据长度为0，类型为0x01

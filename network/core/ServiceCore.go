@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"misakadb/clilog"
 	"misakadb/command"
-	"misakadb/config"
 	"misakadb/network"
 	onces "misakadb/network/Onces"
+	"misakadb/network/RegisterCenter"
 	"misakadb/network/context"
 	"net"
 	"strconv"
@@ -34,13 +34,7 @@ func (serviceCore *ServiceCore) Run() error {
 	defer listener.Close()
 	clilog.Success("listening on", address)
 
-	networkConfig := config.GetGlobalNetworkConfigure()
-	maxConn := 1000
-	if networkConfig != nil && networkConfig.MaxConn > 0 {
-		maxConn = networkConfig.MaxConn
-	}
-	sem := make(chan struct{}, maxConn)
-
+	connectQueue := RegisterCenter.RegisterCenterInstance.ConnectQueue
 	for {
 		rawConn, err := listener.Accept()
 		if err != nil {
@@ -49,12 +43,15 @@ func (serviceCore *ServiceCore) Run() error {
 		}
 		conn := onces.NewSafeConn(rawConn)
 
+		connContext := context.GetServiceConnContext(conn)
+		connectMapperRow := &RegisterCenter.ConnectMapperRow{
+			ConnContext: connContext,
+		}
+
 		select {
-		case sem <- struct{}{}:
-			go func(c net.Conn) {
-				defer func() { <-sem }()
-				serviceCore.contextConn(c)
-			}(conn)
+		case connectQueue <- connectMapperRow:
+			serviceCore.contextConn(conn, connContext)
+			clilog.Success("connect success:", conn.RemoteAddr().String())
 		default:
 			clilog.Warning("server full, rejecting connection:", conn.RemoteAddr().String())
 			conn.Close()
@@ -66,10 +63,8 @@ func (serviceCore *ServiceCore) Run() error {
 /**
  * 处理连接用的上下文
  */
-func (serviceCore *ServiceCore) contextConn(conn net.Conn) {
+func (serviceCore *ServiceCore) contextConn(conn net.Conn, ConnContext *context.ServiceConnContext) {
 	defer onces.NewSafeConn(conn).ConnClose()
-
-	ConnContext := context.GetServiceConnContext(conn)
 
 	for {
 		client_command, err := ConnContext.Recv()

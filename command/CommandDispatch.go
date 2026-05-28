@@ -21,6 +21,7 @@ func (dispatch *CommandDispatch) Dispatch(
 	serviceContext *context.ServiceConnContext,
 	command string,
 ) error {
+
 	dispatchValue := reflect.ValueOf(dispatch).Elem()
 	dispatchType := dispatchValue.Type()
 	for i := 0; i < dispatchType.NumField(); i++ {
