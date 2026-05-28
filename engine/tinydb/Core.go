@@ -1,4 +1,4 @@
-package tinydb
+package engine
 
 type TinyDBCore struct {
 }

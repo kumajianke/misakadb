@@ -26,7 +26,18 @@ func (dispatch *CommandDispatch) Dispatch(
 	case "get-service-info":
 		sysConfigs := config.GetGlobalMisakaConfigure()
 		jsonStr := config.ConvertConfigureToJSON(sysConfigs)
-		serviceHandler.Send(jsonStr)
+		err := serviceHandler.Send(jsonStr)
+		if err != nil {
+			clilog.Error(
+				fmt.Sprintf(
+					"[%s] command `get-service-info` failed, err: %v",
+					(*serviceHandler.Conn).RemoteAddr().String(),
+					err,
+				),
+			)
+			return
+		}
+
 		clilog.Info(
 			fmt.Sprintf(
 				"[%s] command `get-service-info` success",
