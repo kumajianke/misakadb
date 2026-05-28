@@ -1,4 +1,3 @@
-
 import time
 
 from apis.api import MisakaDBClient
@@ -13,7 +12,6 @@ clients2.connect()
 
 clients3 = MisakaDBClient("127.0.0.1", 10032)
 clients3.connect()
-
 
 time.sleep(3)
 print(clients.heart.stats())

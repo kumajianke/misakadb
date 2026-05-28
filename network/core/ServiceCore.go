@@ -34,43 +34,51 @@ func (serviceCore *ServiceCore) Run() error {
 	defer listener.Close()
 	clilog.Success("listening on", address)
 
-	connectQueue := RegisterCenter.RegisterCenterInstance.ConnectQueue
 	for {
 		rawConn, err := listener.Accept()
 		if err != nil {
 			clilog.Warning("accept error:", err)
 			continue
 		}
-		conn := onces.NewSafeConn(rawConn)
+		conn := onces.NewSafeConn(rawConn) // 判断是否为唯一性链接
 
+		registerCenter := RegisterCenter.NewRegisterCenter()
 		connContext := context.GetServiceConnContext(conn)
-		connectMapperRow := &RegisterCenter.ConnectMapperRow{
-			ConnContext: connContext,
+
+		if registerCenter == nil {
+			onces.NewSafeConn(conn).ConnClose()
+			clilog.Warning("register center is nil")
+			continue
 		}
 
-		select {
-		case connectQueue <- connectMapperRow:
-			serviceCore.contextConn(conn, connContext)
-			clilog.Success("connect success:", conn.RemoteAddr().String())
-		default:
-			clilog.Warning("server full, rejecting connection:", conn.RemoteAddr().String())
-			conn.Close()
-			conn = nil
+		error := registerCenter.ChanAppendConn(connContext)
+
+		if error != nil {
+			clilog.Error("context conn error:", error)
+			continue
 		}
+
+		go serviceCore.handlerConn(conn, connContext)
+
 	}
 }
 
 /**
- * 处理连接用的上下文
+ * 对接受到的请求进行处理 函数是一个死循环 只有当Exit或者超时的时候会自动断开
  */
-func (serviceCore *ServiceCore) contextConn(conn net.Conn, ConnContext *context.ServiceConnContext) {
-	defer onces.NewSafeConn(conn).ConnClose()
+func (serviceCore *ServiceCore) handlerConn(conn net.Conn, ConnContext *context.ServiceConnContext) {
+	registerCenter := RegisterCenter.NewRegisterCenter()
+	defer func() {
+		if registerCenter != nil {
+			registerCenter.ChanReleaseConn()
+		}
+		_ = onces.NewSafeConn(conn).ConnClose()
+	}()
 
 	for {
 		client_command, err := ConnContext.Recv()
 		if err != nil {
 			if ConnContext.ErrorCounter > 3 {
-				onces.NewSafeConn(conn).ConnClose()
 				return
 			}
 			ConnContext.ErrorCounter++

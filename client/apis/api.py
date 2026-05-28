@@ -46,7 +46,6 @@ class HeartbeatController:
                     with self._owner._socket_lock:
                         if self._owner.connected and self._owner.client is not None:
                             self._owner.client.send_heartbeat()
-                            print("send")
                             with self._stats_lock:
                                 self._attempt_count += 1
                                 self._success_count += 1
