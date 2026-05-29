@@ -37,7 +37,11 @@ func (u *UserManager) InitUser() {
 		clilog.Error("加密数据失败！")
 		os.Exit(0)
 	}
-	os.WriteFile(UserFile, empty, 0600)
+	err := os.WriteFile(UserFile, empty, 0600)
+	if err != nil {
+		clilog.Error("无法写入文件，请检查根目录中是否存在profiles文件夹。")
+		os.Exit(0)
+	}
 
 	userJsonMap := u.AddUser("root", random_password_no_salt)
 	u.SaveUserFile(userJsonMap)
