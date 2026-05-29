@@ -10,6 +10,8 @@ import (
 	"misakadb/safe"
 	"os"
 	"strings"
+
+	"golang.org/x/term"
 )
 
 func CommandExecute(command_all []string) {
@@ -92,7 +94,7 @@ func CommandExecute(command_all []string) {
 			clilog.Error(err)
 			os.Exit(0)
 		}
-		newPassword, err := promptInput(reader, "请输入新的用户密码: ")
+		newPassword, err := promptPassword("请输入新的用户密码: ")
 		if err != nil {
 			clilog.Error("读取新密码失败:", err)
 			os.Exit(0)
@@ -173,12 +175,28 @@ func promptInput(reader *bufio.Reader, prompt string) (string, error) {
 	return strings.TrimSpace(text), nil
 }
 
+func promptPassword(prompt string) (string, error) {
+	fmt.Print(prompt)
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return "", errors.New("当前输入不是终端，无法安全读取密码")
+	}
+
+	password, err := term.ReadPassword(fd)
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(password)), nil
+}
+
 func requireRootAuth(userManager *miusers.UserManager, reader *bufio.Reader) error {
 	username, err := promptInput(reader, "请输入执行用户名: ")
 	if err != nil {
 		return err
 	}
-	password, err := promptInput(reader, "请输入执行用户密码: ")
+	password, err := promptPassword("请输入执行用户密码: ")
 	if err != nil {
 		return err
 	}
@@ -227,7 +245,7 @@ func runAdminCLI(userManager *miusers.UserManager, reader *bufio.Reader) {
 				clilog.Error("正确用法: chpwd <username>")
 				continue
 			}
-			newPassword, err := promptInput(reader, "请输入新的用户密码: ")
+			newPassword, err := promptPassword("请输入新的用户密码: ")
 			if err != nil {
 				clilog.Error("读取新密码失败:", err)
 				continue
