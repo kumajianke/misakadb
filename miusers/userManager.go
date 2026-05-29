@@ -32,6 +32,13 @@ func (u *UserManager) InitUser() {
 
 	clilog.Info("正在初始化数据表中...")
 	random_password_no_salt := uuid.New().String()
+	empty, err_empty := safe.EncryptByte([]byte("{}"))
+	if err_empty != nil {
+		clilog.Error("加密数据失败！")
+		os.Exit(0)
+	}
+	os.WriteFile(UserFile, empty, 0600)
+
 	userJsonMap := u.AddUser("root", random_password_no_salt)
 	u.SaveUserFile(userJsonMap)
 
@@ -99,7 +106,14 @@ func (u *UserManager) AddUser(username string, password string) map[string]UserJ
 		Remote:   true,
 	}
 
-	user := make(map[string]UserJSON)
+	var user map[string]UserJSON
+	user = u.LoadUserFile()
+	if _, ok := user[username]; ok {
+		clilog.Error(fmt.Sprintf("用户 %s 已存在", username))
+		os.Exit(0)
+	}
+
 	user[username] = userJSON
+	u.SaveUserFile(user)
 	return user
 }

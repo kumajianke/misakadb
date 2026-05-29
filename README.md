@@ -158,4 +158,4 @@ client.close()
 
 ## 许可证
 
-本项目基于 MIT 许可证开源。详见 [LICENSE](./LICENSE) 文件。
+本项目基于 `木兰宽松许可证` 许可证开源。详见 [LICENSE](./LICENSE) 文件。
