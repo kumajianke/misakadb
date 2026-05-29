@@ -13,10 +13,10 @@ import (
 )
 
 type ServiceCore struct {
-	ServiceInfo *network.ServiceInfo
+	ServiceInfo network.ServiceInfo
 }
 
-func NewServiceCore(serviceInfo *network.ServiceInfo) *ServiceCore {
+func NewServiceCore(serviceInfo network.ServiceInfo) *ServiceCore {
 	return &ServiceCore{ServiceInfo: serviceInfo}
 }
 

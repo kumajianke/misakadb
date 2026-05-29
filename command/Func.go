@@ -19,7 +19,7 @@ func (dispatch *CommandDispatch) ImpGetServiceInfo(
 		clilog.Error(
 			fmt.Sprintf(
 				"[%s] command `get-service-info` failed, err: %v",
-				(*serviceContext.Conn).RemoteAddr().String(),
+				(serviceContext.Conn).RemoteAddr().String(),
 				err,
 			),
 		)
@@ -29,7 +29,7 @@ func (dispatch *CommandDispatch) ImpGetServiceInfo(
 	clilog.Info(
 		fmt.Sprintf(
 			"[%s] command `get-service-info` success",
-			(*serviceContext.Conn).RemoteAddr().String(),
+			(serviceContext.Conn).RemoteAddr().String(),
 		),
 	)
 
@@ -40,7 +40,7 @@ func (dispatch *CommandDispatch) ImpExit(
 	serviceContext *context.ServiceConnContext,
 ) error {
 	// 关闭连接
-	onces.NewSafeConn(*(serviceContext.Conn)).Close()
+	onces.NewSafeConn((serviceContext.Conn)).Close()
 	serviceContext = nil // 回收内存
 	return nil
 }

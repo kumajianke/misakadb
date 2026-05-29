@@ -30,12 +30,12 @@ func main() {
 	flag.Parse()
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
-	var serviceInfo *network.ServiceInfo
+	var serviceInfo network.ServiceInfo
 	var cfg *config.MisakaConfigure
 	var err_load_cfg error
 	if *configs == "" {
 		// 从命令行加载
-		serviceInfo = network.NewServiceInfo(port, *address, *debug)
+		serviceInfo = network.NewServiceInfo(*port, *address, *debug)
 		*configs = "$misaka.yaml"
 		if strings.HasPrefix(*configs, "$") {
 			*configs = "./profiles/" + (*configs)[1:]

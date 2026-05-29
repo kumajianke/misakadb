@@ -31,24 +31,20 @@ var (
 func (u *UserManager) InitUser() {
 
 	clilog.Info("正在初始化数据表中...")
-
 	random_password_no_salt := uuid.New().String()
+	userJsonMap := u.AddUser("root", random_password_no_salt)
+	u.SaveUserFile(userJsonMap)
 
-	password_hash, err := bcrypt.GenerateFromPassword(
-		[]byte(random_password_no_salt),
-		bcrypt.DefaultCost,
+	clilog.Success(
+		fmt.Sprintf(
+			"初始化用户信息表完毕, 这是root的密码 %s。不包含前后符号，请在第一时间进行修改，命令：misaka-tools chpwd root。",
+			random_password_no_salt,
+		),
 	)
-	if err != nil {
-		panic(err)
-	}
-	userJSON := &UserJSON{
-		Password: string(password_hash[:]),
-		Role:     "root",
-		Remote:   true,
-	}
+}
 
-	userMap := make(map[string]*UserJSON)
-	userMap["root"] = userJSON
+func (u *UserManager) SaveUserFile(userMap map[string]UserJSON) {
+
 	jsonData, err := json.Marshal(userMap)
 
 	// 加密用户信息
@@ -63,12 +59,7 @@ func (u *UserManager) InitUser() {
 		clilog.Error("无法写入文件，请检查根目录中是否存在profiles文件夹。")
 		panic("system exit.")
 	}
-	clilog.Success(
-		fmt.Sprintf(
-			"初始化用户信息表完毕, 这是root的密码 %s。不包含前后符号，请在第一时间进行修改，命令：misaka-tools chpwd root。",
-			random_password_no_salt,
-		),
-	)
+
 }
 
 func (u *UserManager) LoadUserFile() map[string]UserJSON {
@@ -85,10 +76,30 @@ func (u *UserManager) LoadUserFile() map[string]UserJSON {
 	}
 
 	userJson := make(map[string]UserJSON)
+
 	err = json.Unmarshal(plain, &userJson)
 	if err != nil {
 		clilog.Error("无法解密的用户数据!")
 		os.Exit(0)
 	}
 	return userJson
+}
+
+func (u *UserManager) AddUser(username string, password string) map[string]UserJSON {
+	password_hash, err := bcrypt.GenerateFromPassword(
+		[]byte(password),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		panic(err)
+	}
+	userJSON := UserJSON{
+		Password: string(password_hash[:]),
+		Role:     "default",
+		Remote:   true,
+	}
+
+	user := make(map[string]UserJSON)
+	user[username] = userJSON
+	return user
 }

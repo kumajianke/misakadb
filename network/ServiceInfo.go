@@ -6,9 +6,9 @@ type ServiceInfo struct {
 	Debug   bool
 }
 
-func NewServiceInfo(port *int, address string, debug bool) *ServiceInfo {
-	return &ServiceInfo{
-		Port:    *port,
+func NewServiceInfo(port int, address string, debug bool) ServiceInfo {
+	return ServiceInfo{
+		Port:    port,
 		Address: address,
 		Debug:   debug,
 	}

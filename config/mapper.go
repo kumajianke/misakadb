@@ -31,22 +31,22 @@ func LoadMisakaConfigure(path string) (*MisakaConfigure, error) {
 	return cfg, nil
 }
 
-func ConvertServiceInfo(cfg *MisakaConfigure) *network.ServiceInfo {
+func ConvertServiceInfo(cfg *MisakaConfigure) network.ServiceInfo {
 	if cfg == nil {
-		return nil
+		return network.ServiceInfo{}
 	}
 
 	applyDefaults(cfg)
-	return &network.ServiceInfo{
+	return network.ServiceInfo{
 		Port:    cfg.Network.Port,
 		Address: cfg.Network.Address,
 	}
 }
 
-func LoadServiceInfo(path string) (*network.ServiceInfo, error) {
+func LoadServiceInfo(path string) (network.ServiceInfo, error) {
 	cfg, err := LoadMisakaConfigure(path)
 	if err != nil {
-		return nil, err
+		return network.ServiceInfo{}, err
 	}
 	return ConvertServiceInfo(cfg), nil
 }
@@ -76,7 +76,7 @@ func GetGlobalServiceConfigure() *ServiceConfigure {
 	return &globalConfigure.Service
 }
 
-func GetGlobalServiceInfo() *network.ServiceInfo {
+func GetGlobalServiceInfo() network.ServiceInfo {
 	return ConvertServiceInfo(globalConfigure)
 }
 

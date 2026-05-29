@@ -11,12 +11,8 @@ import (
 
 var lock sync.Mutex
 
-type ConnectMapperRow struct {
-	ConnContext *context.ServiceConnContext
-}
-
 type RegisterCenter struct {
-	ConnectQueue chan *ConnectMapperRow // 链接队列
+	ConnectQueue chan *context.ServiceConnContext // 链接队列
 	Lock         sync.Mutex
 }
 
@@ -36,23 +32,19 @@ func NewRegisterCenter(connectQueueSize ...int) *RegisterCenter {
 	}
 
 	RegisterCenterInstance = &RegisterCenter{
-		ConnectQueue: make(chan *ConnectMapperRow, newConnectQueueSize),
+		ConnectQueue: make(chan *context.ServiceConnContext, newConnectQueueSize),
 	}
 
 	return RegisterCenterInstance
 }
 
 func (connectRegister *RegisterCenter) ChanAppendConn(connContext *context.ServiceConnContext) error {
-	connectMapperRow := &ConnectMapperRow{
-		ConnContext: connContext,
-	}
-
 	select {
-	case connectRegister.ConnectQueue <- connectMapperRow:
+	case connectRegister.ConnectQueue <- connContext:
 		return nil
 	default:
 		// 队列已满
-		conn := (*connContext.Conn)
+		conn := (connContext.Conn)
 
 		err := onces.NewSafeConn(conn).Close()
 		if err != nil {
