@@ -3,6 +3,7 @@ package config
 type MisakaConfigure struct {
 	Network NetworkConfigure `yaml:"network" json:"network"`
 	Service ServiceConfigure `yaml:"service" json:"service"`
+	Private PrivateConfigure `yaml:"private" json:"private"`
 }
 
 type NetworkConfigure struct {
@@ -15,4 +16,12 @@ type NetworkConfigure struct {
 
 type ServiceConfigure struct {
 	Version string `yaml:"version" json:"version"`
+}
+
+type PrivateConfigure struct {
+	Storage StorageConfigure `yaml:"storage" json:"storage"`
+}
+
+type StorageConfigure struct {
+	Path string `yaml:"path" json:"path"`
 }

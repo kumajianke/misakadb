@@ -8,3 +8,7 @@ network:
 service:
   version: "0.0.9"
 
+private:
+  storage:
+    path: "./midatas"
+
