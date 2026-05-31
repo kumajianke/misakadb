@@ -1,7 +1,10 @@
 import argparse
 import sys
 import getpass
+import time
 
+from interface.status import StatusSocket
+from mql.MQ import MiQL
 from network.command_send import commandSend
 import network.sock as sock
 
@@ -51,6 +54,8 @@ if __name__ == "__main__":
             username = input("请输入用户名: ")
             password = getpass.getpass("请输入密码: ")
         
+        cli.status = StatusSocket.Connected
+        
         
         while True:
             commands = ""
@@ -64,6 +69,22 @@ if __name__ == "__main__":
                 row += 1
 
             commands = commands.strip().replace("\\", " ")
+            mq = MiQL(cli)
+            if commands.startswith("mq."):
+                try:
+                    start_time = time.time()
+                    res = mq.shot(commands)
+                    end_time = time.time()
+                    elapsed_ms = (end_time - start_time) * 1000.0
+
+                    if isinstance(res, bytes):
+                        res_str = res.decode("utf-8", errors="replace")
+                        command_send.handle_response(res_str, elapsed_ms, is_init=False)
+                    elif res is not None:
+                        print(res)
+                except Exception as e:
+                    print(f"MiQL 执行失败: {e}", file=sys.stderr)
+                continue
 
             if commands in ["exit", 'e', 'q']:
                 cli.s.close()
@@ -71,7 +92,6 @@ if __name__ == "__main__":
                 sys.exit(0)
 
             if commands:
-                import time
                 start_time = time.time()
                 res = cli.send_command(commands)
                 end_time = time.time()

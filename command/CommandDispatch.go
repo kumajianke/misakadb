@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+	"misakadb/clilog"
 	"misakadb/network/context"
 	"reflect"
 	"strings"
@@ -25,6 +27,22 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 	serviceContext *context.ServiceConnContext,
 	command string,
 ) error {
+
+	if strings.HasPrefix(command, "mq.") {
+		// 这是一个 miql 语句
+		if serviceContext.LoginUser == "" {
+			serviceContext.Send("[error]you must login first")
+			return nil
+		}
+		command = command[3:]
+		clilog.Info(
+			fmt.Sprintf("[%s] miql: %s",
+				serviceContext.Conn.RemoteAddr(),
+				command,
+			))
+
+		return nil
+	}
 
 	dispatchValue := reflect.ValueOf(dispatch).Elem()
 	dispatchType := dispatchValue.Type()
