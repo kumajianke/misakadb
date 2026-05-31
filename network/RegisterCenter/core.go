@@ -6,6 +6,7 @@ import (
 	"misakadb/clilog"
 	onces "misakadb/network/Onces"
 	"misakadb/network/context"
+	"os"
 	"sync"
 )
 
@@ -13,6 +14,7 @@ var lock sync.Mutex
 
 type RegisterCenter struct {
 	ConnectQueue chan *context.ServiceConnContext // 链接队列
+	MasterKey    string                           // 密钥
 	Lock         sync.Mutex
 }
 
@@ -31,8 +33,16 @@ func NewRegisterCenter(connectQueueSize ...int) *RegisterCenter {
 		return nil
 	}
 
+	key, errors := os.ReadFile("./profiles/master.mikey")
+
+	if errors != nil {
+		clilog.Error("[严重错误] 无法获取到密钥!")
+		panic("service is not runnable")
+	}
+
 	RegisterCenterInstance = &RegisterCenter{
 		ConnectQueue: make(chan *context.ServiceConnContext, newConnectQueueSize),
+		MasterKey:    string(key),
 	}
 
 	return RegisterCenterInstance

@@ -90,7 +90,7 @@ func (serviceCore *ServiceCore) handlerConn(conn net.Conn, ConnContext *context.
 			conn.RemoteAddr().String(), string(client_command)),
 		)
 
-		err = (command.NewCommandDispatch()).Dispatch(
+		err = (command.NewMiqlCommDispatch()).Dispatch(
 			ConnContext,
 			string(client_command),
 		)

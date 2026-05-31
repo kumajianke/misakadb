@@ -6,21 +6,22 @@ import (
 	"strings"
 )
 
-type CommandDispatch struct {
+type MiqlCommDispatch struct {
 	GetServiceInfo func(serviceContext *context.ServiceConnContext, args []string) error `mapper:"get-service-info"`
-	Login          func(serviceContext *context.ServiceConnContext, args []string) error `mapper:"__login"`
+	Login          func(serviceContext *context.ServiceConnContext, args []string) error `mapper:"login"`
 	Exit           func(serviceContext *context.ServiceConnContext, args []string) error `mapper:"exit"`
 }
 
-func NewCommandDispatch() *CommandDispatch {
-	dispatch := &CommandDispatch{}
+func NewMiqlCommDispatch() *MiqlCommDispatch {
+	dispatch := &MiqlCommDispatch{}
 	dispatch.GetServiceInfo = dispatch.ImpGetServiceInfo
 	dispatch.Exit = dispatch.ImpExit
+	dispatch.Login = dispatch.ImpLogin
 
 	return dispatch
 }
 
-func (dispatch *CommandDispatch) Dispatch(
+func (dispatch *MiqlCommDispatch) Dispatch(
 	serviceContext *context.ServiceConnContext,
 	command string,
 ) error {

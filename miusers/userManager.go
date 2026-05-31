@@ -72,7 +72,8 @@ func (u *UserManager) SaveUserFile(userMap map[string]UserJSON) error {
 	return nil
 }
 
-func (u *UserManager) LoadUserFile() (map[string]UserJSON, error) {
+func (u *UserManager) LoadUserFile(key ...string) (map[string]UserJSON, error) {
+
 	cryData, err := os.ReadFile(UserFile)
 	if err != nil {
 		return nil, errors.New("无法读取用户数据，请检查 user.dat 是否存在")
@@ -149,7 +150,7 @@ func (u *UserManager) VerifyPassword(username string, password string) error {
 
 	user, ok := userMap[username]
 	if !ok {
-		return fmt.Errorf("用户 %s 不存在", username)
+		return errors.New("密码错误")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {

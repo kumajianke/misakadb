@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"misakadb/clilog"
+	"misakadb/network/RegisterCenter"
 	"os"
 )
 
@@ -87,20 +88,14 @@ func InitPassword() {
 }
 
 func EncryptByte(plaintext []byte) ([]byte, error) {
-	key, err := os.ReadFile("./profiles/master.mikey")
-
-	if err != nil {
-		clilog.Error("无法读入文件，请检查根目录中是否存在profiles文件夹。")
-		panic("error!")
-	}
+	rc := RegisterCenter.NewRegisterCenter()
+	key := []byte(rc.MasterKey)
 	return EncryptAES(key, plaintext)
 }
 
 func DecryptByte(ciphertext []byte) ([]byte, error) {
-	key, err := os.ReadFile("./profiles/master.mikey")
-	if err != nil {
-		clilog.Error("无法读入文件，请检查根目录中是否存在profiles文件夹。")
-		panic("error!")
-	}
+	rc := RegisterCenter.NewRegisterCenter()
+	key := []byte(rc.MasterKey)
+
 	return DecryptAES(key, ciphertext)
 }

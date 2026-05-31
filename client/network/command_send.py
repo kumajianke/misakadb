@@ -121,6 +121,40 @@ class commandSend:
             print(f"{left_aligned}    {info_part}")
 
     
+    def handle_response(self, server_recv_str: str, elapsed_ms: float) -> str:
+        if server_recv_str.startswith("[err]"):
+            info_lines = [
+                "\033[1;36m  库码科技工作室",
+                "\033[1;31m  MisakaDB Client (Failed)\033[0m",
+                "",
+                f"\033[1;36m请求耗时\033[1;33m{' ' * 6} : {elapsed_ms:.2f} ms",
+                f"\033[1;31m错误信息\033[0m : {server_recv_str[5:]}"
+            ]
+            self._print_fetch_layout(info_lines)
+            print()
+            return server_recv_str
+
+        elif server_recv_str.startswith("[ok]"):
+            try:
+                json_data = json.loads(server_recv_str[4:])
+                self._print_fetch_layout(self._build_info_lines(json_data, elapsed_ms))
+            except Exception:
+                # 兼容非JSON格式的普通响应
+                info_lines = [
+                    "\033[1;36m  库码科技工作室",
+                    "\033[1;32m  MisakaDB Client\033[0m",
+                    "",
+                    f"\033[1;36m请求耗时\033[{'1;32m' if round(elapsed_ms, 2) < 0.2 else '1;33m'}{' ' * 6} : {elapsed_ms:.2f} ms",
+                    f"\033[1;36m响应内容\033[0m : {server_recv_str[4:]}"
+                ]
+                self._print_fetch_layout(info_lines)
+            print()
+            return server_recv_str
+
+        else:
+            print(server_recv_str)
+            return server_recv_str
+
     def init_command(self):
         start_time = time.time()
         print("开始初始化服务信息...")
@@ -134,25 +168,7 @@ class commandSend:
         except Exception:
             server_recv_str = str(server_recv_bytes)
 
-        if server_recv_str.startswith("[err]"):
-            info_lines = [
-                "\033[1;36m  库码科技工作室",
-                "\033[1;31m  MisakaDB Client (Failed)\033[0m",
-                "",
-                f"\033[1;36m请求耗时\033[1;33m{' ' * 6} : {elapsed_ms:.2f} ms",
-            ]
-            self._print_fetch_layout(info_lines)
-            print()
-            return server_recv_str
-
-        elif server_recv_str.startswith("[ok]"):
-            try:
-                json_data = json.loads(server_recv_str[4:])
-                self._print_fetch_layout(self._build_info_lines(json_data, elapsed_ms))
-            except Exception:
-                print(f"解析服务信息失败: {server_recv_str[4:]}")
-            print()
-
+        self.handle_response(server_recv_str, elapsed_ms)
 
         print("初始化服务信息完成, 按Enter键继续")
         input("")
@@ -161,6 +177,13 @@ class commandSend:
 
     
     def login(self, username: str, password: str):
+        res = ""
+        start_time= time.time()
         if (username and password):
-            self.cli.send_command(f"login {username} {password}")
+            res = self.cli.send_command(f"login {username} {password}")
+        if res == b"" or res == "":
+            res = res.decode("utf-8")
+        end_time = time.time()
+        elapsed_ms = (end_time - start_time) * 1000.0
+        self.handle_response(res.decode("utf-8"), elapsed_ms)
         

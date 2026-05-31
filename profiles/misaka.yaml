@@ -6,7 +6,7 @@ network:
   retry_delay: 30
 
 service:
-  version: "0.0.10"
+  version: "0.0.11"
   hide_info: false
 
 private:

@@ -203,9 +203,11 @@ func requireRootAuth(userManager *miusers.UserManager, reader *bufio.Reader) err
 	if err := userManager.VerifyRole(username, "root"); err != nil {
 		return fmt.Errorf("root 权限鉴权失败: %w", err)
 	}
-	if err := userManager.VerifyPassword(username, password); err != nil {
+	err = userManager.VerifyPassword(username, password)
+	if err != nil {
 		return fmt.Errorf("用户 %s 鉴权失败: %w", username, err)
 	}
+
 	return nil
 }
 
