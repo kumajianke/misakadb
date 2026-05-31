@@ -28,7 +28,7 @@ class clientCore:
         for i in range(3):
             try:
                 self.s.connect((self.server_address, self.server_port))
-                self.status = StatusSocket.Connected
+                self.status = StatusSocket.ConnectedNoAuth
                 return None # 连接成功返回 None
             except socket.error as e:
                 last_err = e

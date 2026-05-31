@@ -10,10 +10,23 @@ import (
 
 func (dispatch *CommandDispatch) ImpGetServiceInfo(
 	serviceContext *context.ServiceConnContext,
+	arg_command []string,
 ) error {
 	sysConfigs := config.GetGlobalMisakaConfigure()
 	jsonStr := config.ConvertConfigureToJSON(sysConfigs)
-	err := serviceContext.Send(jsonStr)
+	hideInfo := sysConfigs.Service.HideInfo
+
+	clilog.Info(fmt.Sprintf("hideInfo %v", hideInfo))
+
+	var err error
+	if !hideInfo {
+		err = serviceContext.Send(
+			"[ok]" + jsonStr,
+		)
+	} else {
+		clilog.Info("get-service-info命令已被禁用")
+		err = serviceContext.Send("[error]service disable the function")
+	}
 
 	if err != nil {
 		clilog.Error(
@@ -38,6 +51,7 @@ func (dispatch *CommandDispatch) ImpGetServiceInfo(
 
 func (dispatch *CommandDispatch) ImpExit(
 	serviceContext *context.ServiceConnContext,
+	arg_command []string,
 ) error {
 	// 关闭连接
 	onces.NewSafeConn((serviceContext.Conn)).Close()

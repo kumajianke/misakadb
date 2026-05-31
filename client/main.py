@@ -1,5 +1,6 @@
 import argparse
 import sys
+import getpass
 
 from network.command_send import commandSend
 import network.sock as sock
@@ -10,12 +11,17 @@ if __name__ == "__main__":
     parser.add_argument("--address", type=str, default="127.0.0.1", help="服务地址, 默认本地")
     parser.add_argument("--port", type=int, default=10032, help="服务端口, 默认10032")
     parser.add_argument("--mode", type=str, default="default", help="运行模式: shell[cli调试模式]、onlyConn[仅连接]")
+    parser.add_argument("--username", type=str, default="", help="[可选]用户名")
+    parser.add_argument("--password", type=str, default="", help="[可选]密码")
+    
 
     args = parser.parse_args()
     
     address = args.address
     port = args.port
     mode = args.mode
+    username = args.username
+    password = args.password
     
     
     cli = sock.clientCore(address, port)
@@ -29,6 +35,19 @@ if __name__ == "__main__":
     server_recv = command_send.init_command()
 
     if mode in ["shell", "sh", "s"]:
+        retry = False
+        while username == "" or password == "":
+            if retry:
+                print("\n登录失败, 请重新输入用户名和密码:\n")
+            else:
+                retry = True
+            username = input("请输入用户名: ")
+            password = getpass.getpass("请输入密码: ")
+        
+        
+        
+        command_send.login(username, password)
+        
         while True:
             commands = ""
 
@@ -49,6 +68,14 @@ if __name__ == "__main__":
 
             if commands:
                 res = cli.send_command(commands)
-                print(res.decode('utf-8', errors='replace'))
+                res_str = res.decode('utf-8', errors='replace')
+                if res_str.startswith("[ok]"):
+                    print(res_str[4:])
+                elif res_str.startswith("[err]"):
+                    print(f"Error: {res_str[5:]}")
+                elif res_str.startswith("[error]"):
+                    print(f"Error: {res_str[7:]}")
+                else:
+                    print(res_str)
 
         

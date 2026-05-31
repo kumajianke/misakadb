@@ -125,19 +125,42 @@ class commandSend:
         start_time = time.time()
         print("开始初始化服务信息...")
 
-        server_recv = self.cli.send_command("get-service-info")
+        server_recv_bytes = self.cli.send_command("get-service-info")
         end_time = time.time()
         elapsed_ms = (end_time - start_time) * 1000.0
 
-        if (server_recv.decode().startswith("error")) :
-            print(f"初始化服务信息失败: {server_recv}")
-            return server_recv
+        try:
+            server_recv_str = server_recv_bytes.decode('utf-8')
+        except Exception:
+            server_recv_str = str(server_recv_bytes)
 
-        json_data = json.loads(server_recv)
-        self._print_fetch_layout(self._build_info_lines(json_data, elapsed_ms))
-        print()
+        if server_recv_str.startswith("[err]"):
+            info_lines = [
+                "\033[1;36m  库码科技工作室",
+                "\033[1;31m  MisakaDB Client (Failed)\033[0m",
+                "",
+                f"\033[1;36m请求耗时\033[1;33m{' ' * 6} : {elapsed_ms:.2f} ms",
+            ]
+            self._print_fetch_layout(info_lines)
+            print()
+            return server_recv_str
+
+        elif server_recv_str.startswith("[ok]"):
+            try:
+                json_data = json.loads(server_recv_str[4:])
+                self._print_fetch_layout(self._build_info_lines(json_data, elapsed_ms))
+            except Exception:
+                print(f"解析服务信息失败: {server_recv_str[4:]}")
+            print()
+
 
         print("初始化服务信息完成, 按Enter键继续")
         input("")
+            
+        return server_recv_str
+
+    
+    def login(self, username: str, password: str):
+        if (username and password):
+            self.cli.send_command(f"login {username} {password}")
         
-        return server_recv

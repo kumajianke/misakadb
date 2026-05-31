@@ -7,6 +7,7 @@ network:
 
 service:
   version: "0.0.10"
+  hide_info: false
 
 private:
   storage:

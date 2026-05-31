@@ -3,5 +3,6 @@ from enum import Enum
 
 class StatusSocket(Enum):
     Disconnected = "Disconnected"
-    Connected = "Connected"
-    
+    ConnectedNoAuth = "Connected(NoAuth)"
+    Connected = "Connected(Auth)"
+   

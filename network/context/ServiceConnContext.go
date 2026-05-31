@@ -13,14 +13,16 @@ import (
 type ServiceConnContext struct {
 	Conn         net.Conn
 	ErrorCounter int
-	Detail       map[string]any
+	LoginUser    string
+	UseDatabase  string
 }
 
 func GetServiceConnContext(conn net.Conn) *ServiceConnContext {
 	return &ServiceConnContext{
 		Conn:         conn,
 		ErrorCounter: 0,
-		Detail:       make(map[string]any),
+		LoginUser:    "",
+		UseDatabase:  "",
 	}
 }
 
