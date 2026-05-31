@@ -7,7 +7,8 @@
 ## 功能概览
 
 - 连接 MisakaDB 服务端
-- 获取服务信息
+- 提供身份验证 (Login) 与安全拦截
+- 获取服务信息与动态面板展示
 - 执行文本命令
 - 查询服务版本、网络配置、允许命令
 - 自动发送心跳包
@@ -19,6 +20,7 @@
 - 客户端 API: `apis/api.py`
 - 命令行入口: `main.py`
 - 底层 socket 实现: `network/sock.py`
+- 命令格式化输出: `network/command_send.py`
 - 压测示例: `usage/demo1.py`
 
 ## 快速开始
@@ -37,12 +39,16 @@ client = MisakaDBClient("127.0.0.1", 10032)
 - `port=10032`
 - `heartbeat_interval=10.0`
 
-### 2. 连接服务端
+### 2. 连接服务端与鉴权
 
 ```python
 ok = client.connect()
 if not ok:
     print("连接失败")
+
+# 如果服务端开启了鉴权，需要发送 login 命令
+# 在交互模式下，你可以使用 command_send 模块：
+# command_send.login(username, password)
 ```
 
 也可以指定重试参数：
@@ -121,6 +127,8 @@ with MisakaDBClient("127.0.0.1", 10032) as client:
 
 - `True`: 连接成功
 - `False`: 连接失败
+
+*注：此方法仅负责底层 TCP 连接。如果需要身份验证，请在连接成功后调用 `execute_command("login <user> <pass>")` 或使用 `commandSend.login()`。*
 
 ### `close() -> None`
 
@@ -259,6 +267,26 @@ print(stats)
 ```
 
 如果后续服务端增加了心跳应答包，这里的统计口径可以再升级为真正的收发确认率。
+
+## 命令行交互模式 (CLI)
+
+客户端提供了一个功能丰富的交互式终端入口 (`main.py`)，支持以下特性：
+
+- **密码回显关闭**：安全的密码输入体验（与 Linux 终端一致）
+- **华丽面板**：针对 `get-service-info` 等特殊命令提供了对齐的 JSON 展平和 Misaka ASCII Logo 渲染
+- **自动耗时统计**：所有命令自动显示执行延迟 (绿色 < 0.2ms，黄色 >= 0.2ms)
+- **多行输入**：支持以 `\` 结尾进行多行命令拼接
+
+### 启动 CLI
+
+```bash
+python main.py --address 127.0.0.1 --port 10032 --mode shell
+```
+
+**可选参数**：
+- `--username <name>`: 预设用户名
+- `--password <pass>`: 预设密码
+- `--mode onlyConn`: 仅建立连接测试，跳过交互式终端 (适合作为 Windows 后台服务启动)
 
 ## 完整示例
 

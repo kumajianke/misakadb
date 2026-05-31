@@ -77,11 +77,12 @@ func (dispatch *MiqlCommDispatch) ImpLogin(
 		return errors.New("error arguments")
 	}
 	err := miusers.NewUserManager().VerifyPassword(username, password)
+	fmt.Println(err)
 	if err != nil {
-		serviceContext.Send("[err] username and password can not match.")
-		return err
+		serviceContext.Send("[err]username and password can not match.")
+		return nil
 	}
 	serviceContext.LoginUser = username // 记录上下文
-	serviceContext.Send("[ok] login success.")
+	serviceContext.Send("[ok]login success.")
 	return nil
 }

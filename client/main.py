@@ -46,7 +46,10 @@ if __name__ == "__main__":
         
         
         
-        command_send.login(username, password)
+        while not command_send.login(username, password):
+            print("登录失败, 请重新输入用户名和密码:\n")
+            username = input("请输入用户名: ")
+            password = getpass.getpass("请输入密码: ")
         
         
         while True:
@@ -68,15 +71,13 @@ if __name__ == "__main__":
                 sys.exit(0)
 
             if commands:
+                import time
+                start_time = time.time()
                 res = cli.send_command(commands)
+                end_time = time.time()
+                elapsed_ms = (end_time - start_time) * 1000.0
+                
                 res_str = res.decode('utf-8', errors='replace')
-                if res_str.startswith("[ok]"):
-                    print(res_str[4:])
-                elif res_str.startswith("[err]"):
-                    print(f"Error: {res_str[5:]}")
-                elif res_str.startswith("[error]"):
-                    print(f"Error: {res_str[7:]}")
-                else:
-                    print(res_str)
+                command_send.handle_response(res_str, elapsed_ms, is_init=False)
 
         
