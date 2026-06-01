@@ -77,7 +77,6 @@ func (dispatch *MiqlCommDispatch) ImpLogin(
 		return errors.New("error arguments")
 	}
 	err := miusers.NewUserManager().VerifyPassword(username, password)
-	fmt.Println(err)
 	if err != nil {
 		serviceContext.Send("[err]username and password can not match.")
 		return nil

@@ -1,4 +1,4 @@
-package engine
+package engine_base
 
 /**
 * 数据库日志核心，用于记录每个记录指定存储等信息
@@ -30,9 +30,9 @@ type MiQLExecutorCore interface {
  * 数据库核心 不同的数据库指向了一个核心
  * TODO 所有核心的any只是暂时代替 后续会替换成对应的json结构
  */
-type BaseEngineCore struct {
-	Path         string
-	DBLoader     BaseLoaderCore
-	DBBaker      BaseBakerCore
-	MiQLExecutor MiQLExecutorCore
+type BaseEngineCore interface {
+	Path() string
+	DBLoader() BaseLoaderCore
+	DBBaker() BaseBakerCore
+	MiQLExecutor() MiQLExecutorCore
 }

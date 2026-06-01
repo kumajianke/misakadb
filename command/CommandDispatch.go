@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"misakadb/clilog"
+	"misakadb/engine/share"
 	"misakadb/network/context"
 	"reflect"
 	"strings"
@@ -27,23 +28,34 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 	serviceContext *context.ServiceConnContext,
 	command string,
 ) error {
-
+	// ================ miql
 	if strings.HasPrefix(command, "mq.") {
 		// 这是一个 miql 语句
 		if serviceContext.LoginUser == "" {
 			serviceContext.Send("[error]you must login first")
 			return nil
 		}
-		command = command[3:]
+		if len(command) > 3 {
+			command = command[3:]
+		} else {
+			serviceContext.Send("[error]unknow error")
+		}
 		clilog.Info(
 			fmt.Sprintf("[%s] miql: %s",
 				serviceContext.Conn.RemoteAddr(),
 				command,
 			))
+		newMsonParse := share.NewMsonParse(command)
+		if newMsonParse == nil {
+			serviceContext.Send("[err]无法获取到Mson。")
+		}
+		fmt.Println(newMsonParse)
+		newMsonParse.RunnableMsonFectory(serviceContext)
 
 		return nil
 	}
 
+	// ============ Command
 	dispatchValue := reflect.ValueOf(dispatch).Elem()
 	dispatchType := dispatchValue.Type()
 
