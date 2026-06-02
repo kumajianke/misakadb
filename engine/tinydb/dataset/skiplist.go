@@ -186,27 +186,18 @@ func (skipList *SkipList[T]) GetWith(operator string, value any, limit int) ([]K
 func (skipList *SkipList[T]) GetWithPage(operator string, value any, offset int, limit int) ([]KVPair[T], error) {
 	normalized := strings.ToLower(strings.TrimSpace(operator))
 	switch normalized {
-	case "<", ">", "<=", ">=", "=", "==":
+	case "<", "<=":
 		target, err := toInt(value)
 		if err != nil {
 			return nil, err
 		}
-		return skipList.filterByKey(func(key int) bool {
-			switch normalized {
-			case "<":
-				return key < target
-			case ">":
-				return key > target
-			case "<=":
-				return key <= target
-			case ">=":
-				return key >= target
-			case "=", "==":
-				return key == target
-			default:
-				return false
-			}
-		}, offset, limit), nil
+		return skipList.collectUntilKey(target, normalized == "<=", offset, limit), nil
+	case ">", ">=", "=", "==":
+		target, err := toInt(value)
+		if err != nil {
+			return nil, err
+		}
+		return skipList.collectFromKey(target, normalized, offset, limit), nil
 	case "like":
 		pattern := fmt.Sprint(value)
 		return skipList.filterByKey(func(key int) bool {
@@ -218,6 +209,16 @@ func (skipList *SkipList[T]) GetWithPage(operator string, value any, offset int,
 }
 
 func (skipList *SkipList[T]) DeleteWith(operator string, value any, limit int) (int, error) {
+	normalized := strings.ToLower(strings.TrimSpace(operator))
+	switch normalized {
+	case ">", ">=", "=", "==":
+		target, err := toInt(value)
+		if err != nil {
+			return 0, err
+		}
+		return skipList.deleteFromKey(target, normalized, limit), nil
+	}
+
 	rows, err := skipList.GetWith(operator, value, limit)
 	if err != nil {
 		return 0, err
@@ -233,9 +234,128 @@ func (skipList *SkipList[T]) DeleteWith(operator string, value any, limit int) (
 	return deleted, nil
 }
 
+func (skipList *SkipList[T]) deleteFromKey(target int, operator string, limit int) int {
+	start := skipList.findFirstGreaterOrEqual(target)
+	if start == nil {
+		return 0
+	}
+
+	switch operator {
+	case ">":
+		for start != nil && start.Key <= target {
+			start = start.forward[0]
+		}
+	case "=", "==":
+		if start.Key != target {
+			return 0
+		}
+	}
+
+	if start == nil {
+		return 0
+	}
+
+	update, candidate := skipList.findUpdatePath(start.Key)
+	if candidate != start {
+		return 0
+	}
+
+	deleted := 0
+	current := start
+	for current != nil {
+		if !matchForwardOperator(current.Key, target, operator) {
+			break
+		}
+
+		next := current.forward[0]
+		for index := range skipList.level {
+			if update[index].forward[index] != current {
+				continue
+			}
+			update[index].forward[index] = current.forward[index]
+		}
+
+		skipList.length -= len(current.Data)
+		deleted++
+		if limit > 0 && deleted >= limit {
+			break
+		}
+		current = next
+	}
+
+	for skipList.level > 1 && skipList.head.forward[skipList.level-1] == nil {
+		skipList.level--
+	}
+
+	return deleted
+}
+
+func (skipList *SkipList[T]) collectFromKey(target int, operator string, offset int, limit int) []KVPair[T] {
+	start := skipList.findFirstGreaterOrEqual(target)
+	if start == nil {
+		return nil
+	}
+
+	switch operator {
+	case ">":
+		for start != nil && start.Key <= target {
+			start = start.forward[0]
+		}
+	case "=", "==":
+		if start.Key != target {
+			return nil
+		}
+	}
+
+	return collectForward(start, func(key int) bool {
+		switch operator {
+		case ">", ">=":
+			return true
+		case "=", "==":
+			return key == target
+		default:
+			return false
+		}
+	}, offset, limit, true)
+}
+
+func (skipList *SkipList[T]) collectUntilKey(target int, includeEqual bool, offset int, limit int) []KVPair[T] {
+	return collectForward(skipList.head.forward[0], func(key int) bool {
+		if includeEqual {
+			return key <= target
+		}
+		return key < target
+	}, offset, limit, true)
+}
+
+func (skipList *SkipList[T]) findFirstGreaterOrEqual(key int) *SkipListNode[T] {
+	current := skipList.head
+	for index := skipList.level - 1; index >= 0; index-- {
+		for current.forward[index] != nil && current.forward[index].Key < key {
+			current = current.forward[index]
+		}
+	}
+	return current.forward[0]
+}
+
 func (skipList *SkipList[T]) filterByKey(match func(int) bool, offset int, limit int) []KVPair[T] {
+	return collectForward(skipList.head.forward[0], match, offset, limit, false)
+}
+
+func matchForwardOperator(key int, target int, operator string) bool {
+	switch operator {
+	case ">", ">=":
+		return true
+	case "=", "==":
+		return key == target
+	default:
+		return false
+	}
+}
+
+func collectForward[T any](start *SkipListNode[T], match func(int) bool, offset int, limit int, stopOnFirstMiss bool) []KVPair[T] {
 	items := make([]KVPair[T], 0)
-	current := skipList.head.forward[0]
+	current := start
 	if offset < 0 {
 		offset = 0
 	}
@@ -255,6 +375,8 @@ func (skipList *SkipList[T]) filterByKey(match func(int) bool, offset int, limit
 			if limit > 0 && len(items) >= limit {
 				break
 			}
+		} else if stopOnFirstMiss && (len(items) > 0 || skipped > 0) {
+			break
 		}
 		current = current.forward[0]
 	}

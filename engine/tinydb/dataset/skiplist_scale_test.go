@@ -2,7 +2,7 @@ package dataset
 
 import "testing"
 
-const millionDatasetSize = 1_000_000_00
+const millionDatasetSize = 1_000_000
 
 func buildMillionSkipList() *SkipList[*PassStuct] {
 	skipList := NewSkipList[*PassStuct]()
