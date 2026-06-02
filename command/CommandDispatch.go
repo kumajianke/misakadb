@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"misakadb/clilog"
+	mson "misakadb/engine/Mson"
 	"misakadb/engine/share"
 	"misakadb/network/context"
 	"reflect"
@@ -45,12 +46,15 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 				serviceContext.Conn.RemoteAddr(),
 				command,
 			))
-		newMsonParse := share.NewMsonParse(command)
+		newMsonParse := mson.NewMsonParse(command)
 		if newMsonParse == nil {
 			serviceContext.Send("[err]无法获取到Mson。")
+			return nil
 		}
-		fmt.Println(newMsonParse)
-		newMsonParse.RunnableMsonFectory(serviceContext)
+		if err := share.RunMson(newMsonParse, serviceContext); err != nil {
+			clilog.Error(err)
+			serviceContext.Send("[err]无法解析mson")
+		}
 
 		return nil
 	}

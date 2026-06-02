@@ -1,7 +1,15 @@
 import argparse
-import sys
 import getpass
+import os
+import sys
 import time
+
+# 在类 Unix 终端中启用 input() 的行编辑和历史能力。
+try:
+    import readline
+    readline.parse_and_bind("tab: complete")
+except ImportError:
+    readline = None
 
 from interface.status import StatusSocket
 from mql.MQ import MiQL
@@ -86,12 +94,11 @@ if __name__ == "__main__":
                     print(f"MiQL 执行失败: {e}", file=sys.stderr)
                 continue
 
-            if commands in ["exit", 'e', 'q']:
+            elif commands in ["exit", 'e', 'q']:
                 cli.s.close()
                 print("bye~")
                 sys.exit(0)
-
-            if commands:
+            elif commands:
                 start_time = time.time()
                 res = cli.send_command(commands)
                 end_time = time.time()

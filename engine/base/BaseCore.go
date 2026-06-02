@@ -1,11 +1,14 @@
 package engine_base
 
+import mson "misakadb/engine/Mson"
+
 /**
 * 数据库日志核心，用于记录每个记录指定存储等信息
 **/
 type BaseLoaderCore interface {
-	WriteLoader(log any) error // 写入日志
-	ReadLoader(log any) error  // 读取日志
+	WriteLoader(log mson.MsonParse) error // 写入日志
+	ReadLoader(log mson.MsonParse) error  // 读取日志
+	InitLoader(log mson.MsonParse) error  // 初始化日志
 }
 
 /**
@@ -20,10 +23,10 @@ type BaseBakerCore interface {
  * 数据库执行核心，用于执行数据库DML语句
  */
 type MiQLExecutorCore interface {
-	InsertDB(log any) error // 插入数据
-	DeleteDB(log any) error // 删除数据
-	UpdateDB(log any) error // 更新数据
-	SearchDB(log any) error // 搜索数据库中的指定内容
+	InsertDB(log mson.MsonParse) error // 插入数据
+	DeleteDB(log mson.MsonParse) error // 删除数据
+	UpdateDB(log mson.MsonParse) error // 更新数据
+	SearchDB(log mson.MsonParse) error // 搜索数据库中的指定内容
 }
 
 /**

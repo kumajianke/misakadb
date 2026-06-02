@@ -1,9 +1,8 @@
-package share
+package mson
 
 import (
 	"encoding/json"
 	"misakadb/clilog"
-	"misakadb/network/context"
 )
 
 type MsonParse struct {
@@ -31,15 +30,4 @@ func (msonParse *MsonParse) MsonToString() ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
-}
-
-func (msonParse *MsonParse) RunnableMsonFectory(service *context.ServiceConnContext) {
-	active := msonParse.Active
-	switch active {
-	case "cre-dat":
-		MiqlCreateDB(msonParse, service)
-	default:
-		service.Send("[err]unknow miql!")
-	}
-
 }

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>跳表 (Skip List) 动画演示</title>
+    <style>
+        /* Reset and Base Styles */
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 40px 20px; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 1000px; width: 100%; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #1a1a1a; margin-top: 0; margin-bottom: 20px; }
+        
+        /* Text Sections */
+        .intro, .summary { font-size: 15px; color: #4a4a4a; line-height: 1.6; background: #f8f9fa; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #4CAF50; }
+        .summary { border-left-color: #2196F3; margin-top: 24px; margin-bottom: 0; }
+        .summary ul { margin: 10px 0 0 0; padding-left: 20px; }
+        
+        /* Canvas Area */
+        .canvas-container { width: 100%; overflow-x: auto; background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 8px; margin-bottom: 20px; }
+        svg { width: 100%; min-width: 800px; height: 440px; display: block; }
+        
+        /* Controls and Explanation */
+        .explanation-box { padding: 16px 20px; background: #e3f2fd; border-radius: 8px; font-size: 16px; color: #0d47a1; font-weight: 500; margin-bottom: 20px; min-height: 56px; display: flex; align-items: center; transition: background-color 0.3s; }
+        .controls { display: flex; justify-content: center; gap: 16px; }
+        button { padding: 12px 32px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; border-radius: 6px; color: white; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #btn-next { background-color: #2196F3; }
+        #btn-next:hover:not(:disabled) { background-color: #1976D2; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        #btn-next:disabled { background-color: #90caf9; cursor: not-allowed; box-shadow: none; transform: none; }
+        #btn-reset { background-color: #f44336; }
+        #btn-reset:hover { background-color: #d32f2f; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        /* SVG Element Animations */
+        .node-group { transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 1s ease; }
+        .node-rect { fill: #ffffff; stroke: #5f6368; stroke-width: 2; transition: fill 0.8s ease, stroke 0.8s ease; rx: 4; ry: 4; }
+        .node-text { font-size: 16px; font-weight: bold; fill: #202124; text-anchor: middle; dominant-baseline: middle; user-select: none; }
+        .node-label { font-size: 12px; fill: #5f6368; text-anchor: middle; user-select: none; }
+        .arrow { stroke: #9aa0a6; stroke-width: 2.5; fill: none; transition: stroke 0.8s ease, stroke-width 0.8s ease; }
+        .arrow-head { fill: #9aa0a6; transition: fill 0.8s ease; }
+
+        /* Highlight States */
+        .highlight-rect { fill: #bbdefb !important; stroke: #1976d2 !important; }
+        .recorded-rect { fill: #c8e6c9 !important; stroke: #388e3c !important; }
+        .highlight-arrow { stroke: #e53935 !important; stroke-width: 4 !important; }
+        .highlight-arrow-head { fill: #e53935 !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>跳表 (Skip List) 插入过程可视化</h1>
+        
+        <div class="intro">
+            <strong>总体介绍：</strong>跳表是一种基于并联链表的数据结构，通过在基础链表之上添加多级索引（层数）来实现类似二分查找的快速定位。其查找、插入和删除的平均时间复杂度均为 O(log n)。本次动画将演示依次插入元素 <strong>15, 20, 17</strong> 的完整过程，展示寻找插入位置（记录 update 数组）、随机升层以及更新指针的逻辑。
+        </div>
+
+        <div class="canvas-container">
+            <svg id="canvas">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" class="arrow-head" />
+                    </marker>
+                    <marker id="arrowhead-highlight" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" class="highlight-arrow-head" />
+                    </marker>
+                </defs>
+                <g id="arrows-layer"></g>
+                <g id="nodes-layer"></g>
+            </svg>
+        </div>
+
+        <div class="explanation-box" id="explanation">
+            请点击“下一步”开始动画。
+        </div>
+
+        <div class="controls">
+            <button id="btn-next">下一步</button>
+            <button id="btn-reset">重置动画</button>
+        </div>
+
+        <div class="summary">
+            <strong>核心要点总结：</strong>
+            <ul>
+                <li><strong>自顶向下查找：</strong>从当前最高层开始，如果右侧节点的值小于目标值，则向右移动；否则向下移动一层。如此反复直到最底层 (Level 0)。</li>
+                <li><strong>记录更新路径：</strong>查找过程中，每一层最后停留的节点（即需要更新指针的节点）会被记录到 <code>update</code> 数组中（图中以绿色标记）。</li>
+                <li><strong>抛硬币决定层数：</strong>新节点创建时，通过随机概率决定其层数，使得高层节点的数量呈指数级递减。</li>
+                <li><strong>指针重连：</strong>利用 <code>update</code> 数组，将新节点逐层链入对应的并联链表中。</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const MAX_LEVEL = 4; // 为了可视化清晰，限制最大展示层数为 4
+        let steps = [];
+        let stepIndex = 0;
+        let visState = { nodes: [], arrows: [] };
+        
+        const svgNodes = document.getElementById('nodes-layer');
+        const svgArrows = document.getElementById('arrows-layer');
+        const explanationEl = document.getElementById('explanation');
+        const btnNext = document.getElementById('btn-next');
+
+        function addStep(msg, action) {
+            steps.push({ msg, action });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.highlight-rect').forEach(el => el.classList.remove('highlight-rect'));
+            document.querySelectorAll('.highlight-arrow').forEach(el => {
+                el.classList.remove('highlight-arrow');
+                el.setAttribute('marker-end', 'url(#arrowhead)');
+            });
+        }
+
+        function clearRecorded() {
+            document.querySelectorAll('.recorded-rect').forEach(el => el.classList.remove('recorded-rect'));
+        }
+
+        function highlightNode(nodeId, level) {
+            clearHighlights();
+            if (level === -1) { // highlight all levels of a node
+                document.querySelectorAll(`[id^="rect_${nodeId}_"]`).forEach(el => el.classList.add('highlight-rect'));
+            } else {
+                let rect = document.getElementById(`rect_${nodeId}_${level}`);
+                if (rect) rect.classList.add('highlight-rect');
+            }
+        }
+
+        function markUpdateNode(nodeId, level) {
+            let rect = document.getElementById(`rect_${nodeId}_${level}`);
+            if (rect) {
+                rect.classList.add('recorded-rect');
+            }
+        }
+
+        function highlightArrow(fromNodeId, level) {
+            clearHighlights();
+            let arrow = document.getElementById(`arrow_${fromNodeId}_${level}`);
+            if (arrow) {
+                arrow.classList.add('highlight-arrow');
+                arrow.setAttribute('marker-end', 'url(#arrowhead-highlight)');
+            }
+        }
+
+        function renderAll() {
+            // Re-calculate arrows based on current forward pointers
+            visState.arrows = [];
+            visState.nodes.forEach(node => {
+                for(let i = 0; i < node.levels; i++) {
+                    if(node.forward[i]) {
+                        visState.arrows.push({
+                            id: `arrow_${node.id}_${i}`,
+                            from: node.id,
+                            to: node.forward[i].id,
+                            level: i
+                        });
+                    }
+                }
+            });
+
+            // Render Nodes
+            visState.nodes.forEach(node => {
+                let g = document.getElementById(node.id);
+                if (!g) {
+                    g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.setAttribute('id', node.id);
+                    g.classList.add('node-group');
+                    g.style.opacity = 0; // for fade-in effect
+                    svgNodes.appendChild(g);
+
+                    let startY = 380; // Base Y coordinate for Level 0
+                    for(let i = 0; i < node.levels; i++) {
+                        let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rect.setAttribute('id', `rect_${node.id}_${i}`);
+                        rect.setAttribute('x', 0);
+                        rect.setAttribute('y', startY - i * 48); // 40px height + 8px gap
+                        rect.setAttribute('width', 64);
+                        rect.setAttribute('height', 40);
+                        rect.classList.add('node-rect');
+                        g.appendChild(rect);
+
+                        if (i === 0) {
+                            let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', 32);
+                            text.setAttribute('y', startY - i * 48 + 22);
+                            text.classList.add('node-text');
+                            text.textContent = node.label;
+                            g.appendChild(text);
+                        }
+                    }
+                    // Trigger browser reflow to ensure the initial 0 opacity is registered before changing it
+                    void g.offsetWidth; 
+                    g.style.opacity = 1;
+                }
+                // Transition node to its target X position
+                g.setAttribute('transform', `translate(${node.x}, 0)`);
+            });
+
+            // Render Arrows (recreated entirely to easily manage start/end positions dynamically)
+            svgArrows.innerHTML = ''; 
+            visState.arrows.forEach(arrow => {
+                let fromNode = visState.nodes.find(n => n.id === arrow.from);
+                let toNode = visState.nodes.find(n => n.id === arrow.to);
+                if (fromNode && toNode) {
+                    let startY = 380;
+                    let y = startY - arrow.level * 48 + 20; // Center of the rectangle
+                    let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('id', arrow.id);
+                    path.classList.add('arrow');
+                    path.setAttribute('marker-end', 'url(#arrowhead)');
+                    
+                    let startX = fromNode.x + 64;
+                    let endX = toNode.x - 4; // slight gap before the arrowhead
+                    path.setAttribute('d', `M ${startX} ${y} L ${endX} ${y}`);
+                    svgArrows.appendChild(path);
+                }
+            });
+        }
+
+        // Logic Simulator that generates animation steps
+        class SkipListVis {
+            constructor() {
+                this.head = { id: 'head', key: -Infinity, label: 'Head', levels: MAX_LEVEL, forward: Array(MAX_LEVEL).fill(null), x: 50 };
+                this.nodes = [this.head];
+                this.currentMaxLevel = 1; 
+            }
+
+            updateXPositions() {
+                this.nodes.sort((a, b) => a.key - b.key);
+                this.nodes.forEach((n, idx) => {
+                    n.x = 50 + idx * 160;
+                });
+            }
+
+            insert(key, value, targetLevel) {
+                let update = Array(MAX_LEVEL).fill(this.head);
+                let current = this.head;
+
+                addStep(`准备插入新节点 ${key} (值: ${value})。当前跳表有效层数为 Level ${this.currentMaxLevel - 1}。从头节点的 Level ${this.currentMaxLevel - 1} 开始查找。`, () => {
+                    highlightNode('head', this.currentMaxLevel - 1);
+                });
+
+                for (let i = this.currentMaxLevel - 1; i >= 0; i--) {
+                    addStep(`在 Level ${i} 查找...`, () => {
+                        highlightNode(current.id, i);
+                    });
+
+                    while (current.forward[i] && current.forward[i].key < key) {
+                        let next = current.forward[i];
+                        addStep(`比较右侧节点 ${next.label}，因为 ${next.label} < ${key}，继续向右移动。`, () => {
+                            highlightArrow(current.id, i);
+                        });
+                        current = next;
+                        addStep(`到达节点 ${current.label}，继续在 Level ${i} 查找。`, () => {
+                            highlightNode(current.id, i);
+                        });
+                    }
+
+                    let nextMsg = current.forward[i] ? `右侧节点 ${current.forward[i].label} 大于等于 ${key}` : `右侧为空`;
+                    addStep(`${nextMsg}，在 Level ${i} 向右查找结束。将当前节点 ${current.label} 记录到 update 数组（绿色标记），准备下降到下一层。`, () => {
+                        markUpdateNode(current.id, i);
+                    });
+                    update[i] = current;
+                }
+
+                if (targetLevel > this.currentMaxLevel) {
+                    addStep(`假设通过抛硬币随机得到的新节点层数为 ${targetLevel}。由于大于当前最大层数 ${this.currentMaxLevel}，更新跳表最大层数，并将高层 update 指向头节点。`, () => {
+                        for (let i = this.currentMaxLevel; i < targetLevel; i++) {
+                            markUpdateNode('head', i);
+                        }
+                    });
+                    for (let i = this.currentMaxLevel; i < targetLevel; i++) {
+                        update[i] = this.head;
+                    }
+                    this.currentMaxLevel = targetLevel;
+                } else {
+                    addStep(`假设通过抛硬币随机得到的新节点层数为 ${targetLevel}。`, () => {});
+                }
+
+                let newNode = { id: 'node_'+key, key: key, label: `${key}`, value: value, levels: targetLevel, forward: Array(targetLevel).fill(null), x: 0 };
+                this.nodes.push(newNode);
+
+                addStep(`生成新节点 ${key} 并为其分配空间（将其放入正确的顺序位置）。`, () => {
+                    this.updateXPositions();
+                    renderAll();
+                    highlightNode(newNode.id, -1);
+                });
+
+                for (let i = 0; i < targetLevel; i++) {
+                    newNode.forward[i] = update[i].forward[i];
+                    update[i].forward[i] = newNode;
+                    addStep(`更新 Level ${i} 指针：将 update 数组中记录的 ${update[i].label} 的 Level ${i} 指针指向新节点 ${key}。`, () => {
+                        renderAll();
+                        highlightArrow(update[i].id, i);
+                    });
+                }
+
+                addStep(`节点 ${key} 插入完成！清理高亮状态。`, () => {
+                    clearHighlights();
+                    clearRecorded();
+                });
+            }
+        }
+
+        function init() {
+            steps = [];
+            stepIndex = 0;
+            svgNodes.innerHTML = '';
+            svgArrows.innerHTML = '';
+            explanationEl.textContent = '请点击“下一步”开始动画。';
+            btnNext.disabled = false;
+            
+            let skipList = new SkipListVis();
+            visState.nodes = skipList.nodes;
+            skipList.updateXPositions();
+            renderAll();
+
+            // 生成演示动作：对应 python 代码中的插入顺序
+            // 设定了固定的随机层数，以便让动画过程呈现多种情况
+            skipList.insert(15, "Doc_A", 2);
+            skipList.insert(20, "Doc_B", 1);
+            skipList.insert(17, "Doc_C", 3);
+        }
+
+        btnNext.addEventListener('click', () => {
+            if (stepIndex < steps.length) {
+                let step = steps[stepIndex];
+                explanationEl.textContent = step.msg;
+                step.action();
+                stepIndex++;
+            }
+            if (stepIndex >= steps.length) {
+                btnNext.disabled = true;
+                explanationEl.textContent = '动画演示结束。所有演示元素已成功插入跳表。';
+                clearHighlights();
+                clearRecorded();
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            init();
+        });
+
+        // 页面加载完成后初始化
+        init();
+    </script>
+</body>
+</html>

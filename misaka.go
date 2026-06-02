@@ -68,7 +68,7 @@ func main() {
 
 	_ = RegisterCenter.NewRegisterCenter(cfg.Network.MaxConn)
 
-	clilog.Info("\nmisakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
+	clilog.Info("misakadb running on", serviceInfo.Address+":"+fmt.Sprint(serviceInfo.Port))
 	serviceCore := core.NewServiceCore(serviceInfo) // 创建服务核心
 	err := serviceCore.Run()                        // 启动服务核心
 
