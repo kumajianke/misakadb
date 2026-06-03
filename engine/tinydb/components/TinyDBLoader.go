@@ -45,15 +45,17 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	newPath := "./db-datas/" + log.Name
 	_, erros_file := os.Stat(newPath)
 
-	if os.IsNotExist(erros_file) {
+	if erros_file == nil {
+		return errors.New("database is exist!")
+	} else if os.IsNotExist(erros_file) {
 		err := os.Mkdir(newPath, 0700)
 		if err != nil {
 			clilog.Error("[err] create dir error!")
 			return errors.New("create dir error!")
 		}
 	} else {
-
-		return errors.New("database is exist!")
+		clilog.Error("[err] stat db dir error: " + erros_file.Error())
+		return erros_file
 	}
 
 	// 创建内部 .db文件夹
