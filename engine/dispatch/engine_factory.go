@@ -3,6 +3,7 @@ package engine_dispatch
 import (
 	engine_base "misakadb/engine/base"
 	engine "misakadb/engine/tinydb"
+	"misakadb/network/RegisterCenter"
 )
 
 func NewEngine(engineName string, db_name string) engine_base.BaseEngineCore {
@@ -13,8 +14,17 @@ func NewEngine(engineName string, db_name string) engine_base.BaseEngineCore {
 	return nil
 }
 
-func GetDBEngine(dbName string) engine_base.BaseEngineCore {
-	// TODO 通过数据库名字获取对应的引擎
-	// 可以在RC优先注册一个数据库对应的引擎的map 只有找不到再去本地读取对应的文件信息
+func GetDBEngineByRC(dbname string) engine_base.BaseEngineCore {
+	rc := RegisterCenter.RegisterCenterInstance
+	if RegisterCenter.RegisterCenterInstance == nil {
+		return nil
+	}
+	cache_engine, flag := rc.MapperDBEngine.Load(dbname)
+	if flag {
+		engine, ok := cache_engine.(engine_base.BaseEngineCore)
+		if ok {
+			return engine
+		}
+	}
 	return nil
 }

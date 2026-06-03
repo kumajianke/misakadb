@@ -13,9 +13,10 @@ import (
 var lock sync.Mutex
 
 type RegisterCenter struct {
-	ConnectQueue chan *context.ServiceConnContext // 链接队列
-	MasterKey    string                           // 密钥
-	Lock         sync.Mutex
+	ConnectQueue   chan *context.ServiceConnContext // 链接队列
+	MasterKey      string                           // 密钥
+	Lock           sync.Mutex                       // 获取RC的锁
+	MapperDBEngine sync.Map                         // DB名字和引擎的对照MAP
 }
 
 var RegisterCenterInstance *RegisterCenter = nil
