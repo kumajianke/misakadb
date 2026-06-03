@@ -53,7 +53,6 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 		}
 		if err := share.RunMson(newMsonParse, serviceContext); err != nil {
 			clilog.Error(err)
-			serviceContext.Send("[err]无法解析mson")
 		}
 
 		return nil

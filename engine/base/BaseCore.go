@@ -34,7 +34,6 @@ type MiQLExecutorCore interface {
  * TODO 所有核心的any只是暂时代替 后续会替换成对应的json结构
  */
 type BaseEngineCore interface {
-	Path() string
 	DBLoader() BaseLoaderCore
 	DBBaker() BaseBakerCore
 	MiQLExecutor() MiQLExecutorCore

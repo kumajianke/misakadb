@@ -29,10 +29,12 @@ func (tinyDBCore *TinyDBCore) MiQLExecutor() engine_base.MiQLExecutorCore {
 	return tinyDBCore.TinyMiQLExecutor
 }
 
-func (tinyDBCore *TinyDBCore) Path() string {
-	return "./db-datas/$name"
-}
-
 func NewTinyEngine(db_name string) *TinyDBCore {
-	return &TinyDBCore{TinyDBLoader: &components.TinyDBLoaderImp{DBName: db_name}, Name: db_name}
+
+	return &TinyDBCore{
+		TinyDBLoader: &components.TinyDBLoaderImp{
+			DBName: db_name,
+		},
+		Name: db_name,
+	}
 }

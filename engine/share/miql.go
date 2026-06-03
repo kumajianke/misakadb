@@ -6,8 +6,6 @@ import (
 	mson "misakadb/engine/Mson"
 	engine_dispatch "misakadb/engine/dispatch"
 	"misakadb/network/context"
-	"os"
-	"strings"
 )
 
 func RunMson(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
@@ -30,6 +28,7 @@ func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConn
 
 	engineName := msonParse.Engine                                    // 获取到对应的引擎名字
 	dbEngine := engine_dispatch.NewEngine(engineName, msonParse.Name) // 数据库引擎
+
 	if dbEngine == nil {
 		clilog.Error("未知的引擎诉求")
 		if err := serviceContext.Send("[err]未知的引擎诉求"); err != nil {
@@ -37,13 +36,13 @@ func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConn
 		}
 		return errors.New("unknown engine request")
 	}
-	path := dbEngine.Path()
-	newPath := strings.Replace(path, "$name", msonParse.Name, 1)
-	if _, erros_file := os.Stat(newPath); os.IsNotExist(erros_file) {
-		os.Mkdir(newPath, 0700)
-	} else {
-		serviceContext.Send("[err]database is exist!")
-		return nil
+
+	err := dbEngine.DBLoader().InitLoader(*msonParse) // 选择对应的数据库引擎进行初始化
+
+	if err != nil {
+		err_string := err.Error()
+		serviceContext.Send("[err]" + err_string) // 错误信息的返回
+		return err
 	}
 
 	serviceContext.Send("[ok]create db is ok!")

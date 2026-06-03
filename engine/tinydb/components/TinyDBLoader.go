@@ -41,22 +41,28 @@ func (this *TinyDBLoaderImp) ReadLoader(log mson.MsonParse) error {
 func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	this.Locker.Lock()
 	defer this.Locker.Unlock()
-	data_path := "./db-datas/" + log.Name
-	all_files, err := os.ReadDir(data_path)
-	if err != nil {
-		clilog.Error("[err]InitLoader error: get files error")
-		return err
+	// 创建 数据库根目录
+	newPath := "./db-datas/" + log.Name
+	_, erros_file := os.Stat(newPath)
+
+	if os.IsNotExist(erros_file) {
+		err := os.Mkdir(newPath, 0700)
+		if err != nil {
+			clilog.Error("[err] create dir error!")
+			return errors.New("create dir error!")
+		}
+	} else {
+
+		return errors.New("database is exist!")
 	}
-	if len(all_files) > 0 {
-		clilog.Error("[err]new db folder has other files!")
-		return errors.New("[err]new db folder has other files!")
-	}
-	err = os.Mkdir(data_path+"/.db", 0600)
+
+	// 创建内部 .db文件夹
+	err := os.Mkdir(newPath+"/.db", 0700)
 	if err != nil {
 		clilog.Error("[err]init db folder create error!")
-		return errors.New("[err]init db folder create error!")
+		return errors.New("init db folder create error!")
 	}
-	fileName := data_path + "/.db/meta.json"
+	fileName := newPath + "/.db/meta.json"
 	metaJson := filejson.NewTinyDBMeta(
 		this.DBName,
 		make([]string, 0),
@@ -65,18 +71,18 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	jsonData, err := json.Marshal(metaJson)
 	if err != nil {
 		clilog.Error("[err]InitLoader error: JsonData error")
-		return err
+		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
 	err = os.WriteFile(fileName, []byte(jsonData), 0600)
 	if err != nil {
 		clilog.Error("[err]InitLoader error: JsonData error")
-		return err
+		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
 	if generashares.IsWindows() {
-		err = exec.Command("attrib", "+h", data_path+"/.db").Run()
+		err = exec.Command("attrib", "+h", newPath+"/.db").Run()
 		if err != nil {
 			clilog.Error("Window platform can not hide the .db folder ")
-			return err
+			return errors.New("Window platform can not hide the .db folder ")
 		}
 	}
 
