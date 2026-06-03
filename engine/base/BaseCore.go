@@ -1,9 +1,42 @@
 package engine_base
 
-import mson "misakadb/engine/Mson"
+import (
+	mson "misakadb/engine/Mson"
+	"sync"
+)
+
+type BaseLockerCore interface {
+	Lock() *sync.Mutex
+	GetRowLock(name string) *sync.Mutex // 获取行级锁
+}
+
+type EngineLockerSupport struct {
+	RowLocks map[string]*sync.Mutex
+	Locker   sync.Mutex
+}
+
+func (lockerCore *EngineLockerSupport) Lock() *sync.Mutex {
+	return &lockerCore.Locker
+}
+
+func (lockerCore *EngineLockerSupport) GetRowLock(name string) *sync.Mutex {
+	lockerCore.Locker.Lock()
+	defer lockerCore.Locker.Unlock()
+
+	if lockerCore.RowLocks == nil {
+		lockerCore.RowLocks = make(map[string]*sync.Mutex)
+	}
+
+	rowLock := lockerCore.RowLocks[name]
+	if rowLock == nil {
+		lockerCore.RowLocks[name] = &sync.Mutex{}
+	}
+
+	return lockerCore.RowLocks[name]
+}
 
 /**
-* 数据库日志核心，用于记录每个记录指定存储等信息
+*用于数据库文件的操作IO等组件的使用
 **/
 type BaseLoaderCore interface {
 	WriteLoader(log mson.MsonParse) error // 写入日志
@@ -34,7 +67,9 @@ type MiQLExecutorCore interface {
  * TODO 所有核心的any只是暂时代替 后续会替换成对应的json结构
  */
 type BaseEngineCore interface {
+	BaseLockerCore
 	DBLoader() BaseLoaderCore
 	DBBaker() BaseBakerCore
 	MiQLExecutor() MiQLExecutorCore
+	RemoveDB() error
 }

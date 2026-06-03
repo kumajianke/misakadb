@@ -21,33 +21,32 @@ type TinyDBRecorder struct {
 }
 
 type TinyDBLoaderImp struct {
-	engine_base.BaseLoaderCore
-	RowLock map[string]*sync.Mutex // 行级锁
-	Locker  sync.Mutex             // 全局锁
-	DBName  string
+	Locker      engine_base.BaseLockerCore
+	localLocker engine_base.EngineLockerSupport
+	DBName      string
+}
+
+var _ engine_base.BaseLoaderCore = (*TinyDBLoaderImp)(nil)
+
+func (this *TinyDBLoaderImp) lockerCore() engine_base.BaseLockerCore {
+	if this.Locker != nil {
+		return this.Locker
+	}
+
+	return &this.localLocker
 }
 
 /**
 * 获取行级锁
  */
 func (this *TinyDBLoaderImp) GetRowLock(name string) *sync.Mutex {
-	this.Locker.Lock()
-	defer this.Locker.Unlock()
-
-	if this.RowLock == nil {
-		this.RowLock = make(map[string]*sync.Mutex)
-	}
-
-	rowLock := this.RowLock[name]
-	if rowLock == nil {
-		this.RowLock[name] = &sync.Mutex{}
-	}
-	return this.RowLock[name]
+	return this.lockerCore().GetRowLock(name)
 }
 
 func (this *TinyDBLoaderImp) WriteLoader(log mson.MsonParse) error {
-	this.Locker.Lock()
-	defer this.Locker.Unlock()
+	lock := this.lockerCore().Lock()
+	lock.Lock()
+	defer lock.Unlock()
 
 	return nil
 }
