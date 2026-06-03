@@ -33,7 +33,7 @@ func (this *TinyDBCore) RemoveDB(dbname string) error {
 	}
 	err = os.RemoveAll(path)
 	if err != nil {
-		clilog.Error("[err] connot remove this db: " + dbname)
+		clilog.Error("[err] cannot remove this db: " + dbname)
 		return err
 	}
 	return nil

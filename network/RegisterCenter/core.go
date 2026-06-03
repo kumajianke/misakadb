@@ -55,6 +55,16 @@ func NewRegisterCenter(connectQueueSize ...int) *RegisterCenter {
 }
 
 func (connectRegister *RegisterCenter) ChanAppendConn(connContext *context.ServiceConnContext) error {
+	// 检查队列是否已初始化
+	if connectRegister.ConnectQueue == nil {
+		conn := connContext.Conn
+		err := onces.NewSafeConn(conn).Close()
+		if err != nil {
+			clilog.Error(fmt.Sprintf("[%s] close conn error", conn.RemoteAddr().String()))
+		}
+		return errors.New("connect queue not initialized")
+	}
+
 	select {
 	case connectRegister.ConnectQueue <- connContext:
 		return nil
@@ -73,6 +83,11 @@ func (connectRegister *RegisterCenter) ChanAppendConn(connContext *context.Servi
 }
 
 func (connectRegister *RegisterCenter) ChanReleaseConn() {
+	// 检查队列是否已初始化
+	if connectRegister.ConnectQueue == nil {
+		return
+	}
+
 	select {
 	case <-connectRegister.ConnectQueue:
 	default:
