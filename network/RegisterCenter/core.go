@@ -30,7 +30,8 @@ func NewRegisterCenter(connectQueueSize ...int) *RegisterCenter {
 	if len(connectQueueSize) > 0 {
 		newConnectQueueSize = connectQueueSize[0]
 	} else {
-		return nil
+		// 无参数调用时，创建一个用于工具/加密场景的简化实例（不初始化连接队列）
+		newConnectQueueSize = 0
 	}
 
 	key, errors := os.ReadFile("./profiles/master.mikey")
@@ -40,8 +41,13 @@ func NewRegisterCenter(connectQueueSize ...int) *RegisterCenter {
 		panic("service is not runnable")
 	}
 
+	var connQueue chan *context.ServiceConnContext
+	if newConnectQueueSize > 0 {
+		connQueue = make(chan *context.ServiceConnContext, newConnectQueueSize)
+	}
+
 	RegisterCenterInstance = &RegisterCenter{
-		ConnectQueue: make(chan *context.ServiceConnContext, newConnectQueueSize),
+		ConnectQueue: connQueue,
 		MasterKey:    string(key),
 	}
 

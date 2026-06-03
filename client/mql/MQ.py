@@ -20,6 +20,11 @@ class MiQL:
         self.__mson["engine"] = engine
         return self
     
+    def dropDB(self, name):
+        self.__mson["active"] = "drp-dat"
+        self.__mson["name"] = name
+        return self
+
     def shot(self, expr: str | None = None):
         if self.__cli is None:
             raise TypeError("没有设置对应的__cli")

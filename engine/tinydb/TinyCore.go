@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"misakadb/clilog"
 	engine_base "misakadb/engine/base"
 	"misakadb/engine/tinydb/components"
+	"os"
 )
 
 type TinyDBCore struct {
@@ -17,10 +19,23 @@ type TinyDBCore struct {
 
 var _ engine_base.BaseEngineCore = (*TinyDBCore)(nil)
 
-func (this *TinyDBCore) RemoveDB() error {
+func (this *TinyDBCore) RemoveDB(dbname string) error {
 	rowLock := this.GetRowLock(this.Name)
 	rowLock.Lock()
 	defer rowLock.Unlock()
+
+	path := "./db-datas/" + dbname
+
+	_, err := os.Stat(path)
+	if err != nil {
+		clilog.Error("[err] cannot found this db: " + dbname)
+		return err
+	}
+	err = os.RemoveAll(path)
+	if err != nil {
+		clilog.Error("[err] connot remove this db: " + dbname)
+		return err
+	}
 	return nil
 }
 

@@ -11,7 +11,7 @@ type BaseLockerCore interface {
 }
 
 type EngineLockerSupport struct {
-	RowLocks map[string]*sync.Mutex
+	rowLocks sync.Map
 	Locker   sync.Mutex
 }
 
@@ -20,19 +20,8 @@ func (lockerCore *EngineLockerSupport) Lock() *sync.Mutex {
 }
 
 func (lockerCore *EngineLockerSupport) GetRowLock(name string) *sync.Mutex {
-	lockerCore.Locker.Lock()
-	defer lockerCore.Locker.Unlock()
-
-	if lockerCore.RowLocks == nil {
-		lockerCore.RowLocks = make(map[string]*sync.Mutex)
-	}
-
-	rowLock := lockerCore.RowLocks[name]
-	if rowLock == nil {
-		lockerCore.RowLocks[name] = &sync.Mutex{}
-	}
-
-	return lockerCore.RowLocks[name]
+	rowLock, _ := lockerCore.rowLocks.LoadOrStore(name, &sync.Mutex{})
+	return rowLock.(*sync.Mutex)
 }
 
 /**
@@ -71,5 +60,5 @@ type BaseEngineCore interface {
 	DBLoader() BaseLoaderCore
 	DBBaker() BaseBakerCore
 	MiQLExecutor() MiQLExecutorCore
-	RemoveDB() error
+	RemoveDB(dbname string) error
 }
