@@ -5,9 +5,9 @@ import (
 	engine "misakadb/engine/tinydb"
 )
 
-func NewEngine(engineName string) engine_base.BaseEngineCore {
+func NewEngine(engineName string, db_name string) engine_base.BaseEngineCore {
 	if engineName == "tinydb" {
-		return engine.NewTinyEngine()
+		return engine.NewTinyEngine(db_name)
 	}
 
 	return nil

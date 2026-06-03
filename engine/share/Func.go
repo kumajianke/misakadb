@@ -28,8 +28,8 @@ func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConn
 		return errors.New("Error Dispatch!")
 	}
 
-	engineName := msonParse.Engine                    // 获取到对应的引擎名字
-	dbEngine := engine_dispatch.NewEngine(engineName) // 数据库引擎
+	engineName := msonParse.Engine                                    // 获取到对应的引擎名字
+	dbEngine := engine_dispatch.NewEngine(engineName, msonParse.Name) // 数据库引擎
 	if dbEngine == nil {
 		clilog.Error("未知的引擎诉求")
 		if err := serviceContext.Send("[err]未知的引擎诉求"); err != nil {
