@@ -1,15 +1,20 @@
 package filejson
 
+import (
+	engine_base "misakadb/engine/base"
+)
+
 type TinyDBMeta struct {
-	DBName     string   `json:"db_name"`
-	AllTables  []string `json:"all_tables"`
-	CreateTime string   `json:"create_time"`
+	engine_base.BaseDBMeta
 }
 
 func NewTinyDBMeta(dbName string, allTables []string, createTime string) *TinyDBMeta {
 	return &TinyDBMeta{
-		DBName:     dbName,
-		AllTables:  allTables,
-		CreateTime: createTime,
+		BaseDBMeta: engine_base.BaseDBMeta{
+			DBName:     dbName,
+			AllTables:  allTables,
+			CreateTime: createTime,
+			Engine:     "tinydb",
+		},
 	}
 }

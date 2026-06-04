@@ -1,7 +1,10 @@
 package engine_base
 
 import (
+	"encoding/json"
+	"errors"
 	mson "misakadb/engine/Mson"
+	"os"
 	"sync"
 )
 
@@ -53,7 +56,6 @@ type MiQLExecutorCore interface {
 
 /**
  * 数据库核心 不同的数据库指向了一个核心
- * TODO 所有核心的any只是暂时代替 后续会替换成对应的json结构
  */
 type BaseEngineCore interface {
 	BaseLockerCore
@@ -61,4 +63,29 @@ type BaseEngineCore interface {
 	DBBaker() BaseBakerCore
 	MiQLExecutor() MiQLExecutorCore
 	RemoveDB(dbname string) error
+}
+
+type BaseDBMeta struct {
+	DBName     string   `json:"db_name"`
+	AllTables  []string `json:"all_tables"`
+	CreateTime string   `json:"create_time"`
+	Engine     string   `json:"engine"`
+}
+
+func ShareLoaderDBMetaName(dbname string) (string, error) {
+
+	path := "./db-datas/" + dbname + "/meta.json"
+	dbMeta := &BaseDBMeta{}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", errors.New("can not read the db mate file")
+	}
+
+	err = json.Unmarshal([]byte(content), dbMeta)
+	if err != nil {
+		return "", errors.New("can not convert the db-mate to json")
+	}
+
+	return dbMeta.Engine, nil
+
 }
