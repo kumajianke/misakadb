@@ -10,6 +10,7 @@ import (
 	generashares "misakadb/genera_shares"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -63,7 +64,7 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	defer rowlock.Unlock()
 
 	// 创建 数据库根目录
-	newPath := "./db-datas/" + log.Name
+	newPath := filepath.Join(".", "db-datas", log.Name)
 	_, erros_file := os.Stat(newPath)
 
 	if erros_file == nil {
@@ -80,12 +81,13 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	}
 
 	// 创建内部 .db文件夹
-	err := os.Mkdir(newPath+"/.db", 0700)
+	dbMetaDir := filepath.Join(newPath, ".db")
+	err := os.Mkdir(dbMetaDir, 0700)
 	if err != nil {
 		clilog.Error("[err]init db folder create error!")
 		return errors.New("init db folder create error!")
 	}
-	fileName := newPath + "/.db/meta.json"
+	fileName := filepath.Join(dbMetaDir, "meta.json")
 	metaJson := filejson.NewTinyDBMeta(
 		this.DBName,
 		make([]string, 0),
@@ -102,7 +104,7 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
 	if generashares.IsWindows() {
-		err = exec.Command("attrib", "+h", newPath+"/.db").Run()
+		err = exec.Command("attrib", "+h", dbMetaDir).Run()
 		if err != nil {
 			clilog.Error("Window platform can not hide the .db folder ")
 			return errors.New("Window platform can not hide the .db folder ")

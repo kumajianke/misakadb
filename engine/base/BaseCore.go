@@ -5,6 +5,7 @@ import (
 	"errors"
 	mson "misakadb/engine/Mson"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -74,16 +75,16 @@ type BaseDBMeta struct {
 
 func ShareLoaderDBMetaName(dbname string) (string, error) {
 
-	path := "./db-datas/" + dbname + "/meta.json"
+	path := filepath.Join(".", "db-datas", dbname, "meta.json")
 	dbMeta := &BaseDBMeta{}
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return "", errors.New("can not read the db mate file")
+		return "", errors.New("can not read the db meta file")
 	}
 
 	err = json.Unmarshal([]byte(content), dbMeta)
 	if err != nil {
-		return "", errors.New("can not convert the db-mate to json")
+		return "", errors.New("can not convert the db-meta to json")
 	}
 
 	return dbMeta.Engine, nil

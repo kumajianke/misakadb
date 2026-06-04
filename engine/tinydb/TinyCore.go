@@ -5,6 +5,7 @@ import (
 	engine_base "misakadb/engine/base"
 	"misakadb/engine/tinydb/components"
 	"os"
+	"path/filepath"
 )
 
 type TinyDBCore struct {
@@ -24,7 +25,7 @@ func (this *TinyDBCore) RemoveDB(dbname string) error {
 	rowLock.Lock()
 	defer rowLock.Unlock()
 
-	path := "./db-datas/" + dbname
+	path := filepath.Join(".", "db-datas", dbname)
 
 	_, err := os.Stat(path)
 	if err != nil {
