@@ -3,29 +3,52 @@ package engine_base
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	mson "misakadb/engine/Mson"
+	global_lock "misakadb/lock/global_lock"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 )
 
 type BaseLockerCore interface {
-	Lock() *sync.Mutex
-	GetRowLock(name string) *sync.Mutex // 获取行级锁
+	Lock() (func(), error)
+	GetRowLock(name string) (func(), error) // 获取行级锁
 }
 
 type EngineLockerSupport struct {
-	rowLocks sync.Map
-	Locker   sync.Mutex
+	LockNamespace      string
+	namespaceOnce      sync.Once
+	generatedNamespace string
 }
 
-func (lockerCore *EngineLockerSupport) Lock() *sync.Mutex {
-	return &lockerCore.Locker
+var generatedLockerNamespaceCounter atomic.Uint64
+
+func (lockerCore *EngineLockerSupport) namespace() string {
+	if lockerCore.LockNamespace != "" {
+		return lockerCore.LockNamespace
+	}
+
+	lockerCore.namespaceOnce.Do(func() {
+		lockerCore.generatedNamespace = fmt.Sprintf("locker-%d", generatedLockerNamespaceCounter.Add(1))
+	})
+
+	return lockerCore.generatedNamespace
 }
 
-func (lockerCore *EngineLockerSupport) GetRowLock(name string) *sync.Mutex {
-	rowLock, _ := lockerCore.rowLocks.LoadOrStore(name, &sync.Mutex{})
-	return rowLock.(*sync.Mutex)
+func (lockerCore *EngineLockerSupport) lockKey(name string) string {
+	return lockerCore.namespace() + ":" + name
+}
+
+func (lockerCore *EngineLockerSupport) Lock() (func(), error) {
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(lockerCore.lockKey("engine"), "lock")
+	return unlock, err
+}
+
+func (lockerCore *EngineLockerSupport) GetRowLock(name string) (func(), error) {
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(lockerCore.lockKey("row:"+name), "lock")
+	return unlock, err
 }
 
 /**

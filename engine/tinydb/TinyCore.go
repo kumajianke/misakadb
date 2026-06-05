@@ -21,13 +21,15 @@ type TinyDBCore struct {
 var _ engine_base.BaseEngineCore = (*TinyDBCore)(nil)
 
 func (this *TinyDBCore) RemoveDB(dbname string) error {
-	rowLock := this.GetRowLock(this.Name)
-	rowLock.Lock()
-	defer rowLock.Unlock()
+	unlock, err := this.GetRowLock(this.Name)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	path := filepath.Join(".", "db-datas", dbname)
 
-	_, err := os.Stat(path)
+	_, err = os.Stat(path)
 	if err != nil {
 		clilog.Error("[err] cannot found this db: " + dbname)
 		return err
@@ -60,6 +62,7 @@ func NewTinyEngine(db_name string) *TinyDBCore {
 	tinyDBCore := &TinyDBCore{
 		Name: db_name,
 	}
+	tinyDBCore.LockNamespace = "tinydb:" + db_name
 
 	tinyDBCore.TinyDBLoader = &components.TinyDBLoaderImp{
 		DBName: db_name,

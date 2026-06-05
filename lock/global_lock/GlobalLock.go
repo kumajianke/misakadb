@@ -26,7 +26,10 @@ type GlobalLocksPool struct {
 
 func GetGlobalLockPool() *GlobalLocksPool {
 	once.Do(func() {
-		globalLocksPool = &GlobalLocksPool{}
+		globalLocksPool = &GlobalLocksPool{
+			youngPool: *xsync.NewMapOf[string, *GlobalLocks](),
+			oldPool:   *xsync.NewMapOf[string, *GlobalLocks](),
+		}
 	})
 	return globalLocksPool
 }

@@ -3,6 +3,7 @@ package components
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_base "misakadb/engine/base"
@@ -11,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -34,20 +34,19 @@ func (this *TinyDBLoaderImp) lockerCore() engine_base.BaseLockerCore {
 		return this.Locker
 	}
 
+	if this.localLocker.LockNamespace == "" {
+		this.localLocker.LockNamespace = "tinydb:" + this.DBName
+	}
+
 	return &this.localLocker
 }
 
-/**
-* 获取行级锁
- */
-func (this *TinyDBLoaderImp) GetRowLock(name string) *sync.Mutex {
-	return this.lockerCore().GetRowLock(name)
-}
-
 func (this *TinyDBLoaderImp) WriteLoader(log mson.MsonParse) error {
-	lock := this.lockerCore().Lock()
-	lock.Lock()
-	defer lock.Unlock()
+	unlock, err := this.lockerCore().Lock()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	return nil
 }
@@ -59,9 +58,11 @@ func (this *TinyDBLoaderImp) ReadLoader(log mson.MsonParse) error {
 func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	this.DBName = log.Name
 
-	rowlock := this.GetRowLock(this.DBName)
-	rowlock.Lock()
-	defer rowlock.Unlock()
+	unlock, err := this.lockerCore().GetRowLock(this.DBName)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	// 创建 数据库根目录
 	newPath := filepath.Join(".", "db-datas", log.Name)
@@ -70,10 +71,18 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	if erros_file == nil {
 		return errors.New("database is exist!")
 	} else if os.IsNotExist(erros_file) {
-		err := os.Mkdir(newPath, 0700)
+		dbRootPath := filepath.Join(".", "db-datas")
+		dbRootInfo, rootErr := os.Stat(dbRootPath)
+		if rootErr == nil && !dbRootInfo.IsDir() {
+			dirErr := fmt.Errorf("%s is not a directory", dbRootPath)
+			clilog.Error("[err] stat db root error: " + dirErr.Error())
+			return dirErr
+		}
+
+		err = os.Mkdir(newPath, 0700)
 		if err != nil {
-			clilog.Error("[err] create dir error!")
-			return errors.New("create dir error!")
+			clilog.Error("[err] create dir error: " + err.Error())
+			return err
 		}
 	} else {
 		clilog.Error("[err] stat db dir error: " + erros_file.Error())
@@ -82,7 +91,7 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 
 	// 创建内部 .db文件夹
 	dbMetaDir := filepath.Join(newPath, ".db")
-	err := os.Mkdir(dbMetaDir, 0700)
+	err = os.Mkdir(dbMetaDir, 0700)
 	if err != nil {
 		clilog.Error("[err]init db folder create error!")
 		return errors.New("init db folder create error!")
