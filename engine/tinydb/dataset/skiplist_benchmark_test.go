@@ -46,3 +46,21 @@ func BenchmarkGetWithPageMillionData(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkDeleteWithMillionData(b *testing.B) {
+	b.ReportAllocs()
+
+	for b.Loop() {
+		b.StopTimer()
+		skipList := buildMillionSkipList()
+		b.StartTimer()
+
+		deleted, err := skipList.DeleteWith("like", "12%", 1_000)
+		if err != nil {
+			b.Fatalf("DeleteWith returned error: %v", err)
+		}
+		if deleted != 1_000 {
+			b.Fatalf("expected 1000 deleted keys, got %d", deleted)
+		}
+	}
+}

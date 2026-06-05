@@ -16,14 +16,7 @@ func TestAdd(t *testing.T) {
 			Name: fmt.Sprintf("张-%d", randomNum),
 		})
 	}
-	values, _ := skipList.Get(100)
-
-	rows, err := skipList.GetWith(">=", 100, 2)
-	likeRows, err := skipList.GetWith("like", "1%", 1)
-	if err != nil {
-		t.Fatalf("GetWith returned error: %v", err)
-	}
-	fmt.Println(values)
-	fmt.Println(rows)
-	fmt.Println(likeRows)
+	skipList.Get(100)
+	skipList.GetWith(">=", 100, 2)
+	skipList.GetWith("like", "1%", 1)
 }

@@ -3,6 +3,7 @@ package dataset
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -199,10 +200,8 @@ func (skipList *SkipList[T]) GetWithPage(operator string, value any, offset int,
 		}
 		return skipList.collectFromKey(target, normalized, offset, limit), nil
 	case "like":
-		pattern := fmt.Sprint(value)
-		return skipList.filterByKey(func(key int) bool {
-			return likeMatch(fmt.Sprintf("%d", key), pattern)
-		}, offset, limit), nil
+		matchKey := compileLikeKeyMatcher(fmt.Sprint(value))
+		return skipList.filterByKey(matchKey, offset, limit), nil
 	default:
 		return nil, fmt.Errorf("unsupported operator: %s", operator)
 	}
@@ -217,6 +216,9 @@ func (skipList *SkipList[T]) DeleteWith(operator string, value any, limit int) (
 			return 0, err
 		}
 		return skipList.deleteFromKey(target, normalized, limit), nil
+	case "like":
+		matchKey := compileLikeKeyMatcher(fmt.Sprint(value))
+		return skipList.deleteMatching(matchKey, limit), nil
 	}
 
 	rows, err := skipList.GetWith(operator, value, limit)
@@ -232,6 +234,50 @@ func (skipList *SkipList[T]) DeleteWith(operator string, value any, limit int) (
 	}
 
 	return deleted, nil
+}
+
+func (skipList *SkipList[T]) deleteMatching(match func(int) bool, limit int) int {
+	update := make([]*SkipListNode[T], skipList.level)
+	for index := range update {
+		update[index] = skipList.head
+	}
+
+	deleted := 0
+	current := skipList.head.forward[0]
+	for current != nil {
+		next := current.forward[0]
+		if match(current.Key) {
+			for index := range update {
+				if update[index].forward[index] != current {
+					continue
+				}
+				update[index].forward[index] = current.forward[index]
+			}
+
+			skipList.length -= len(current.Data)
+			deleted++
+			if limit > 0 && deleted >= limit {
+				break
+			}
+
+			current = next
+			continue
+		}
+
+		for index := range update {
+			if update[index].forward[index] == current {
+				update[index] = current
+			}
+		}
+
+		current = next
+	}
+
+	for skipList.level > 1 && skipList.head.forward[skipList.level-1] == nil {
+		skipList.level--
+	}
+
+	return deleted
 }
 
 func (skipList *SkipList[T]) deleteFromKey(target int, operator string, limit int) int {
@@ -354,7 +400,11 @@ func matchForwardOperator(key int, target int, operator string) bool {
 }
 
 func collectForward[T any](start *SkipListNode[T], match func(int) bool, offset int, limit int, stopOnFirstMiss bool) []KVPair[T] {
-	items := make([]KVPair[T], 0)
+	capHint := 0
+	if limit > 0 {
+		capHint = limit
+	}
+	items := make([]KVPair[T], 0, capHint)
 	current := start
 	if offset < 0 {
 		offset = 0
@@ -407,8 +457,7 @@ func toInt(value any) (int, error) {
 	case uint64:
 		return int(typed), nil
 	case string:
-		var parsed int
-		_, err := fmt.Sscanf(strings.TrimSpace(typed), "%d", &parsed)
+		parsed, err := strconv.Atoi(strings.TrimSpace(typed))
 		if err != nil {
 			return 0, fmt.Errorf("value %q can not convert to int", typed)
 		}
@@ -416,6 +465,139 @@ func toInt(value any) (int, error) {
 	default:
 		return 0, fmt.Errorf("unsupported key type: %T", value)
 	}
+}
+
+func compileLikeKeyMatcher(pattern string) func(int) bool {
+	segments, startsWithWildcard, endsWithWildcard := compileLikePattern(pattern)
+	if len(segments) == 0 {
+		return func(int) bool { return true }
+	}
+
+	if len(segments) == 1 {
+		segment := segments[0]
+		switch {
+		case !startsWithWildcard && !endsWithWildcard:
+			if exact, ok := parseNumericSegment(segment); ok {
+				return func(key int) bool { return key == exact }
+			}
+			return func(key int) bool { return strconv.Itoa(key) == segment }
+		case !startsWithWildcard && endsWithWildcard:
+			if prefix, prefixDigits, ok := parseNumericSegmentWithDigits(segment); ok {
+				return func(key int) bool { return hasNumericPrefix(key, prefix, prefixDigits) }
+			}
+			return func(key int) bool { return strings.HasPrefix(strconv.Itoa(key), segment) }
+		case startsWithWildcard && !endsWithWildcard:
+			if suffix, suffixDigits, ok := parseNumericSegmentWithDigits(segment); ok {
+				return func(key int) bool { return hasNumericSuffix(key, suffix, suffixDigits) }
+			}
+			return func(key int) bool { return strings.HasSuffix(strconv.Itoa(key), segment) }
+		case startsWithWildcard && endsWithWildcard:
+			return func(key int) bool { return strings.Contains(strconv.Itoa(key), segment) }
+		}
+	}
+
+	return func(key int) bool {
+		return matchCompiledLike(strconv.Itoa(key), segments, startsWithWildcard, endsWithWildcard)
+	}
+}
+
+func compileLikePattern(pattern string) ([]string, bool, bool) {
+	parts := strings.Split(pattern, "%")
+	segments := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		segments = append(segments, part)
+	}
+
+	return segments, strings.HasPrefix(pattern, "%"), strings.HasSuffix(pattern, "%")
+}
+
+func matchCompiledLike(value string, segments []string, startsWithWildcard bool, endsWithWildcard bool) bool {
+	searchFrom := 0
+	for index, segment := range segments {
+		matchIndex := strings.Index(value[searchFrom:], segment)
+		if matchIndex < 0 {
+			return false
+		}
+
+		matchIndex += searchFrom
+		if index == 0 && !startsWithWildcard && matchIndex != 0 {
+			return false
+		}
+
+		searchFrom = matchIndex + len(segment)
+	}
+
+	if !endsWithWildcard {
+		last := segments[len(segments)-1]
+		return strings.HasSuffix(value, last)
+	}
+
+	return true
+}
+
+func parseNumericSegment(segment string) (int, bool) {
+	value, _, ok := parseNumericSegmentWithDigits(segment)
+	return value, ok
+}
+
+func parseNumericSegmentWithDigits(segment string) (int, int, bool) {
+	if segment == "" {
+		return 0, 0, false
+	}
+	for _, ch := range segment {
+		if ch < '0' || ch > '9' {
+			return 0, 0, false
+		}
+	}
+
+	value, err := strconv.Atoi(segment)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	return value, len(segment), true
+}
+
+func hasNumericPrefix(key int, prefix int, prefixDigits int) bool {
+	if key < 0 {
+		return false
+	}
+
+	keyDigits := decimalDigits(key)
+	if keyDigits < prefixDigits {
+		return false
+	}
+
+	return key/pow10(keyDigits-prefixDigits) == prefix
+}
+
+func hasNumericSuffix(key int, suffix int, suffixDigits int) bool {
+	if key < 0 {
+		return false
+	}
+
+	mod := pow10(suffixDigits)
+	return key%mod == suffix
+}
+
+func decimalDigits(value int) int {
+	digits := 1
+	for value >= 10 {
+		value /= 10
+		digits++
+	}
+	return digits
+}
+
+func pow10(exp int) int {
+	result := 1
+	for range exp {
+		result *= 10
+	}
+	return result
 }
 
 func likeMatch(value string, pattern string) bool {
