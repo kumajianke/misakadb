@@ -22,15 +22,15 @@ type GlobalLocks struct {
 }
 
 type GlobalLocksPool struct {
-	youngPool xsync.MapOf[string, *GlobalLocks] // 当前热门的锁
-	oldPool   xsync.MapOf[string, *GlobalLocks] // 池化分代技术；即将淘汰的锁用于GC
+	youngPool *xsync.MapOf[string, *GlobalLocks] // 当前热门的锁
+	oldPool   *xsync.MapOf[string, *GlobalLocks] // 池化分代技术；即将淘汰的锁用于GC
 }
 
 func GetGlobalLockPool() *GlobalLocksPool {
 	once.Do(func() {
 		globalLocksPool = &GlobalLocksPool{
-			youngPool: *xsync.NewMapOf[string, *GlobalLocks](),
-			oldPool:   *xsync.NewMapOf[string, *GlobalLocks](),
+			youngPool: xsync.NewMapOf[string, *GlobalLocks](),
+			oldPool:   xsync.NewMapOf[string, *GlobalLocks](),
 		}
 	})
 	return globalLocksPool
@@ -112,7 +112,8 @@ func lockPoolsGCThread() {
 	// 再去做 young 的 old 化
 	pools := GetGlobalLockPool()
 	pools.oldPool.Range(func(key string, value *GlobalLocks) bool {
-		if value.RefCounter.CompareAndSwap(0, -1) { // 引用计数为0表示已经被解锁了
+		if value.RefCounter.Load() == -1 || value.RefCounter.CompareAndSwap(0, -1) {
+			// 引用计数为0表示已经被解锁了
 			// Del 之前扔进坟墓里
 
 			pools.oldPool.Delete(key) // 老东西 你已经没用了!
