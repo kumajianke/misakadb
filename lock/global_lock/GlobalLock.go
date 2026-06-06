@@ -45,57 +45,66 @@ func GetOrStoreGlobalLock(lock_name string, lock_method string) (*GlobalLocks, f
 	if lock_name == "" {
 		return nil, nil, errors.New("lock_name can't be empty string!")
 	}
-
-	for {
-		// 尝试直接在新池中获取锁
-		lock, cache_hit := pools.youngPool.Load(lock_name)
-		if cache_hit {
-			if lock.RefCounter.Load() < 0 {
-				// 已经被标记到了墓碑
-				continue
-			}
+Redo:
+	// 尝试直接在新池中获取锁
+	lock, cache_hit := pools.youngPool.Load(lock_name)
+	var lockRefCounter int32
+	if cache_hit {
+		lockRefCounter = lock.RefCounter.Load()
+		if lockRefCounter < 0 {
+			// 已经被标记到了墓碑 晦气晦气!
+			cache_hit = false
 		}
-		if !cache_hit {
-			// 如果缓存没有命中 查看是否旧池中有这个锁 有的话获取对应的旧值并给他删掉
-			lock, cache_hit = pools.oldPool.Load(lock_name)
-			if cache_hit {
-				if lock.RefCounter.Load() < 0 {
-					continue
-				}
+	}
+	if !cache_hit {
+		// 如果缓存没有命中 查看是否旧池中有这个锁 有的话获取对应的旧值并给他删掉
+		lock, cache_hit = pools.oldPool.Load(lock_name)
+		if cache_hit {
+			lockRefCounter = lock.RefCounter.Load()
+			if lockRefCounter < 0 {
+				cache_hit = false
+			} else {
 				lock, _ = pools.youngPool.LoadOrStore(lock_name, lock) // 升级锁
 				pools.oldPool.Delete(lock_name)
 			}
-			if !cache_hit {
-				lock, _ = pools.youngPool.LoadOrStore(lock_name, &GlobalLocks{})
-				// 新旧池都没有 就新建一个
-			}
 		}
-
-		lock_success := false
-		switch lock_method {
-		case "lock", "l":
-			lock.Lock.Lock()
-			lock.RefCounter.Add(1)
-			lock_success = true
-		case "tl", "try_lock":
-			lock_success = lock.Lock.TryLock()
-			if lock_success {
-				lock.RefCounter.Add(1)
-			} else {
-				return nil, nil, errors.New("Get lock but lock is locked by other, can't lock the lock!")
-			}
-		default:
-			return nil, nil, errors.New("invalid lock_method: must be 'lock', 'l', 'tl', or 'try_lock'")
+		if !cache_hit {
+			lock, _ = pools.youngPool.LoadOrStore(lock_name, &GlobalLocks{})
+			// 新旧池都没有 就新建一个
 		}
-
-		return lock, func() {
-			if lock_method == "" || !lock_success {
-				return
-			}
-			lock.RefCounter.Add(-1) // 回收引用计数
-			lock.Lock.Unlock()
-		}, nil
 	}
+
+	lock_success := false
+	switch lock_method {
+	case "lock", "l":
+		if !lock.RefCounter.CompareAndSwap(lockRefCounter, lockRefCounter+1) {
+			goto Redo
+		} else {
+			lock.Lock.Lock()
+		}
+		lock_success = true
+	case "tl", "try_lock":
+		if !lock.RefCounter.CompareAndSwap(lockRefCounter, lockRefCounter+1) {
+			// 我刚提的新车!!(获取的锁被其他协程用了)
+			goto Redo
+		} else {
+			lock_success = lock.Lock.TryLock()
+			if !lock_success {
+				lock.RefCounter.Add(-1) // 美美把玩 CAS +1 需要注意碰到墓碑 防止被中途回收  -1 要是给的墓碑就当随份子了
+			}
+		}
+
+	default:
+		return nil, nil, errors.New("invalid lock_method: must be 'lock', 'l', 'tl', or 'try_lock'")
+	}
+
+	return lock, func() {
+		if lock_method == "" || !lock_success {
+			return
+		}
+		lock.Lock.Unlock()      // 先解锁 防止Add - 1为-1被回收了
+		lock.RefCounter.Add(-1) // 回收引用计数
+	}, nil
 }
 
 func lockPoolsGCThread() {
