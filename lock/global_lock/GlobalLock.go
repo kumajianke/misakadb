@@ -112,15 +112,16 @@ func lockPoolsGCThread() {
 	// 再去做 young 的 old 化
 	pools := GetGlobalLockPool()
 	pools.oldPool.Range(func(key string, value *GlobalLocks) bool {
-		lock_ref := value.RefCounter.Load()
-		if lock_ref == 0 { // 引用计数为0表示已经被解锁了
+		if value.RefCounter.CompareAndSwap(0, -1) { // 引用计数为0表示已经被解锁了
+			// Del 之前扔进坟墓里
+
 			pools.oldPool.Delete(key) // 老东西 你已经没用了!
 		}
 		return true
 	})
 
 	pools.youngPool.Range(func(key string, value *GlobalLocks) bool {
-		if value.RefCounter.CompareAndSwap(0, -1) {
+		if value.RefCounter.Load() == 0 {
 			_, loaded := pools.oldPool.LoadOrStore(key, value)
 			if loaded {
 				clilog.Warning("[GlobalLocksPool] before that Young Pool GC the lock，old pool had the lock even.")
