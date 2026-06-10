@@ -213,6 +213,7 @@ mq._eval_node
 
 ### 当前实现已经避免的风险
 
+- 从Home开始到End结束
 - 没有直接使用 `eval()` 或 `exec()`
 - 没有开放任意变量名
 - 参数使用 `ast.literal_eval()`，不会执行复杂表达式
