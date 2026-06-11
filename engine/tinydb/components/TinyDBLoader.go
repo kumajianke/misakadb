@@ -9,6 +9,7 @@ import (
 	engine_base "misakadb/engine/base"
 	filejson "misakadb/engine/tinydb/FileJson"
 	generashares "misakadb/genera_shares"
+	"misakadb/lock/global_lock"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,32 +23,12 @@ type TinyDBRecorder struct {
 }
 
 type TinyDBLoaderImp struct {
-	Locker      engine_base.BaseLockerCore
-	localLocker engine_base.EngineLockerSupport
-	DBName      string
+	DBName string
 }
 
 var _ engine_base.BaseLoaderCore = (*TinyDBLoaderImp)(nil)
 
-func (this *TinyDBLoaderImp) lockerCore() engine_base.BaseLockerCore {
-	if this.Locker != nil {
-		return this.Locker
-	}
-
-	if this.localLocker.LockNamespace == "" {
-		this.localLocker.LockNamespace = "tinydb:" + this.DBName
-	}
-
-	return &this.localLocker
-}
-
 func (this *TinyDBLoaderImp) WriteLoader(log mson.MsonParse) error {
-	unlock, err := this.lockerCore().Lock()
-	if err != nil {
-		return err
-	}
-	defer unlock()
-
 	return nil
 }
 
@@ -57,9 +38,9 @@ func (this *TinyDBLoaderImp) ReadLoader(log mson.MsonParse) error {
 
 func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	this.DBName = log.Name
-
-	unlock, err := this.lockerCore().GetRowLock(this.DBName)
+	_, unlock, err := global_lock.GetOrStoreGlobalLock("db-files:"+this.DBName, "l")
 	if err != nil {
+		clilog.Error("[err]" + err.Error())
 		return err
 	}
 	defer unlock()

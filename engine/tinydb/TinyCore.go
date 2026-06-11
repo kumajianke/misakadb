@@ -4,13 +4,12 @@ import (
 	"misakadb/clilog"
 	engine_base "misakadb/engine/base"
 	"misakadb/engine/tinydb/components"
+	"misakadb/lock/global_lock"
 	"os"
 	"path/filepath"
 )
 
 type TinyDBCore struct {
-	engine_base.EngineLockerSupport
-
 	TinyDBLoader     engine_base.BaseLoaderCore
 	TinyDBBaker      engine_base.BaseBakerCore
 	TinyMiQLExecutor engine_base.MiQLExecutorCore
@@ -21,7 +20,8 @@ type TinyDBCore struct {
 var _ engine_base.BaseEngineCore = (*TinyDBCore)(nil)
 
 func (this *TinyDBCore) RemoveDB(dbname string) error {
-	unlock, err := this.GetRowLock(this.Name)
+
+	_, unlock, err := global_lock.GetOrStoreGlobalLock("db-files:"+dbname, "l")
 	if err != nil {
 		return err
 	}
@@ -62,11 +62,9 @@ func NewTinyEngine(db_name string) *TinyDBCore {
 	tinyDBCore := &TinyDBCore{
 		Name: db_name,
 	}
-	tinyDBCore.LockNamespace = "tinydb:" + db_name
 
 	tinyDBCore.TinyDBLoader = &components.TinyDBLoaderImp{
 		DBName: db_name,
-		Locker: tinyDBCore,
 	}
 
 	return tinyDBCore

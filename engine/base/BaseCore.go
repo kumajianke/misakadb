@@ -3,53 +3,10 @@ package engine_base
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	mson "misakadb/engine/Mson"
-	global_lock "misakadb/lock/global_lock"
 	"os"
 	"path/filepath"
-	"sync"
-	"sync/atomic"
 )
-
-type BaseLockerCore interface {
-	Lock() (func(), error)
-	GetRowLock(name string) (func(), error) // 获取行级锁
-}
-
-type EngineLockerSupport struct {
-	LockNamespace      string
-	namespaceOnce      sync.Once
-	generatedNamespace string
-}
-
-var generatedLockerNamespaceCounter atomic.Uint64
-
-func (lockerCore *EngineLockerSupport) namespace() string {
-	if lockerCore.LockNamespace != "" {
-		return lockerCore.LockNamespace
-	}
-
-	lockerCore.namespaceOnce.Do(func() {
-		lockerCore.generatedNamespace = fmt.Sprintf("locker-%d", generatedLockerNamespaceCounter.Add(1))
-	})
-
-	return lockerCore.generatedNamespace
-}
-
-func (lockerCore *EngineLockerSupport) lockKey(name string) string {
-	return lockerCore.namespace() + ":" + name
-}
-
-func (lockerCore *EngineLockerSupport) Lock() (func(), error) {
-	_, unlock, err := global_lock.GetOrStoreGlobalLock(lockerCore.lockKey("engine"), "lock")
-	return unlock, err
-}
-
-func (lockerCore *EngineLockerSupport) GetRowLock(name string) (func(), error) {
-	_, unlock, err := global_lock.GetOrStoreGlobalLock(lockerCore.lockKey("row:"+name), "lock")
-	return unlock, err
-}
 
 /**
 *用于数据库文件的操作IO等组件的使用
@@ -82,7 +39,6 @@ type MiQLExecutorCore interface {
  * 数据库核心 不同的数据库指向了一个核心
  */
 type BaseEngineCore interface {
-	BaseLockerCore
 	DBLoader() BaseLoaderCore
 	DBBaker() BaseBakerCore
 	MiQLExecutor() MiQLExecutorCore
