@@ -25,7 +25,7 @@ func GetDBEngine(dbname string) (engine_base.BaseEngineCore, error) {
 		return nil, err
 	}
 
-	RegisterCenter.RegisterCenterInstance.MapperDBEngine.Store("dbname", engine_base)
+	RegisterCenter.RegisterCenterInstance.MapperDBEngine.Store(dbname, engine_base)
 	// 回填数据
 
 	return NewEngine(engine_base, dbname), nil
