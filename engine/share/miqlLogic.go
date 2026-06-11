@@ -5,6 +5,7 @@ import (
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_dispatch "misakadb/engine/dispatch"
+	"misakadb/lock/global_lock"
 	"misakadb/miusers"
 	"misakadb/network/context"
 )
@@ -41,11 +42,26 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 	if msonPaese.Active != "drp-dat" {
 		return errors.New("Error Dispatch!")
 	}
+
+	dbname := msonPaese.Name
 	username := serviceContext.LoginUser
+
+	// 鉴权操作
 	err := miusers.NewUserManager().VerifyRole(username, "root")
 	if err != nil {
 		serviceContext.Send("[err]" + err.Error())
+		return err
 	}
+
+	// 加锁操作
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(global_lock.GetLocksPrefix().DBFile+dbname, "l")
+	if err != nil {
+		serviceContext.Send("[err]" + err.Error())
+		return err
+	}
+	defer unlock()
+
+	// 具体删除
 
 	return nil
 }

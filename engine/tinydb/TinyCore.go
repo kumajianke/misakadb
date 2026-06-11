@@ -21,7 +21,7 @@ var _ engine_base.BaseEngineCore = (*TinyDBCore)(nil)
 
 func (this *TinyDBCore) RemoveDB(dbname string) error {
 
-	_, unlock, err := global_lock.GetOrStoreGlobalLock("db-files:"+dbname, "l")
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(global_lock.GetLocksPrefix().DBFile+dbname, "l")
 	if err != nil {
 		return err
 	}

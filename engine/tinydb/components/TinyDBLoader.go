@@ -7,6 +7,7 @@ import (
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_base "misakadb/engine/base"
+	dblist "misakadb/engine/db_list"
 	filejson "misakadb/engine/tinydb/FileJson"
 	generashares "misakadb/genera_shares"
 	"misakadb/lock/global_lock"
@@ -38,7 +39,12 @@ func (this *TinyDBLoaderImp) ReadLoader(log mson.MsonParse) error {
 
 func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	this.DBName = log.Name
-	_, unlock, err := global_lock.GetOrStoreGlobalLock("db-files:"+this.DBName, "l")
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(
+		global_lock.GetLocksPrefix().DBArea+this.DBName,
+		"l",
+	)
+	// 尝试给数据库引擎的文件加锁
+
 	if err != nil {
 		clilog.Error("[err]" + err.Error())
 		return err
@@ -99,6 +105,13 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 			clilog.Error("Window platform can not hide the .db folder ")
 			return errors.New("Window platform can not hide the .db folder ")
 		}
+	}
+
+	// 注册数据库到全局列表（同步执行，确保注册成功）
+	err = dblist.StoreDB(this.DBName, "TinyDB")
+	if err != nil {
+		clilog.Error("[err]Failed to register database to global list: " + err.Error())
+		return errors.New("failed to register database: " + err.Error())
 	}
 
 	return nil
