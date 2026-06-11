@@ -8,6 +8,7 @@ import (
 	"misakadb/network"
 	"misakadb/network/RegisterCenter"
 	"misakadb/network/core"
+	"misakadb/tui"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
@@ -28,6 +29,7 @@ func printTitle(cfg *config.MisakaConfigure) {
 
 func main() {
 	flag.Parse()
+	tui.Thread_start()
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo

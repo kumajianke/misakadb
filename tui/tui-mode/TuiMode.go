@@ -18,6 +18,10 @@ func GetTuiMode() TuiMode {
 	return GlobalTuiMode
 }
 
+func SetTuiMode(mode TuiMode) {
+	GlobalTuiMode = mode
+}
+
 func (w TuiMode) String() string {
 	return [...]string{"CLIMode", "LockMode", "UnKnown"}[w]
 }

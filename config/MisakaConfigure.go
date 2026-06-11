@@ -17,6 +17,7 @@ type NetworkConfigure struct {
 type ServiceConfigure struct {
 	Version  string `yaml:"version" json:"version"`
 	HideInfo bool   `yaml:"hide_info" json:"-"`
+	Debug    bool   `yaml:"debug" json:"debug"`
 }
 
 type PrivateConfigure struct {
