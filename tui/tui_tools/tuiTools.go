@@ -2,7 +2,6 @@ package tui_tools
 
 import (
 	"fmt"
-	"time"
 )
 
 // 清屏
@@ -28,16 +27,4 @@ func HideCursor() {
 // 显示光标
 func ShowCursor() {
 	fmt.Print("\033[?25h")
-}
-
-func main() {
-	Clear()
-	fmt.Println("第一行")
-	fmt.Println("第二行")
-
-	// 2秒后清屏
-	time.Sleep(2 * time.Second)
-	Clear()
-
-	fmt.Println("已清屏")
 }
