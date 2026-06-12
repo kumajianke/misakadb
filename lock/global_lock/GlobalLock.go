@@ -36,6 +36,24 @@ func GetGlobalLockPool() *GlobalLocksPool {
 	return globalLocksPool
 }
 
+func (p *GlobalLocksPool) GetYoungPoolSnapshot() map[string]int32 {
+	m := make(map[string]int32)
+	p.youngPool.Range(func(key string, value *GlobalLocks) bool {
+		m[key] = value.RefCounter.Load()
+		return true
+	})
+	return m
+}
+
+func (p *GlobalLocksPool) GetOldPoolSnapshot() map[string]int32 {
+	m := make(map[string]int32)
+	p.oldPool.Range(func(key string, value *GlobalLocks) bool {
+		m[key] = value.RefCounter.Load()
+		return true
+	})
+	return m
+}
+
 /**
 * 获取一个锁，如果锁是第一次创建，自动注册到全局锁池
  */
@@ -123,6 +141,7 @@ func lockPoolsGCThread() {
 
 	pools.youngPool.Range(func(key string, value *GlobalLocks) bool {
 		if value.RefCounter.Load() == 0 {
+			// 这里即使判断之后+1导致计数器不再为0也不急 反正old会给他升上去 所以不需要 CAS
 			_, loaded := pools.oldPool.LoadOrStore(key, value)
 			if loaded {
 				clilog.Warning("[GlobalLocksPool] before that Young Pool GC the lock，old pool had the lock even.")

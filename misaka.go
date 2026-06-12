@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"misakadb/clilog"
 	"misakadb/config"
+	"misakadb/lock/global_lock"
 	"misakadb/network"
 	"misakadb/network/RegisterCenter"
 	"misakadb/network/core"
@@ -30,6 +31,7 @@ func printTitle(cfg *config.MisakaConfigure) {
 func main() {
 	flag.Parse()
 	tui.Thread_start()
+	global_lock.StartLoPoolGC()
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo
