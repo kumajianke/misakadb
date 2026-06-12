@@ -8,6 +8,7 @@ var GlobalTuiMode TuiMode = UnKnown
 const (
 	CLIMode TuiMode = iota
 	LockMode
+	MenuMode
 	UnKnown
 )
 
@@ -23,5 +24,5 @@ func SetTuiMode(mode TuiMode) {
 }
 
 func (w TuiMode) String() string {
-	return [...]string{"CLIMode", "LockMode", "UnKnown"}[w]
+	return [...]string{"CLIMode", "LockMode", "MenuMode", "UnKnown"}[w]
 }
