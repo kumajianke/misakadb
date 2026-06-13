@@ -54,12 +54,16 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 	}
 
 	// 加锁操作
-	_, unlock, err := global_lock.GetOrStoreGlobalLock(global_lock.GetLocksPrefix().DBFile+dbname, "l")
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(
+		global_lock.GetLocksPrefix().DBFile+dbname,
+		"l",
+	)
+	defer unlock()
+
 	if err != nil {
 		serviceContext.Send("[err]" + err.Error())
 		return err
 	}
-	defer unlock()
 
 	// 具体删除
 
