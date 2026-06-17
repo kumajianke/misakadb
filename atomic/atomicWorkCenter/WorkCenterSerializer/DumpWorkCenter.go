@@ -39,7 +39,11 @@ func (this *WorkCenterSerializer) Dump() {
 	defer unlock()
 
 	if _, err = os.Stat(".data"); err != nil {
-		os.Mkdir(".data", 0700)
+		err = os.Mkdir(".data", 0700)
+		if err != nil {
+			this._thread__chan <- "file_write_error"
+			return
+		}
 	}
 
 	jsonData, err := json.Marshal(this)
@@ -70,9 +74,6 @@ func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) b
 			}
 		}
 	case <-time.After(100 * time.Second):
-		// 如果 100 秒后 Dump 还没发来消息，说明出了意外，直接返回失败，防止永久阻塞
 		return false
 	}
-
-	return false
 }
