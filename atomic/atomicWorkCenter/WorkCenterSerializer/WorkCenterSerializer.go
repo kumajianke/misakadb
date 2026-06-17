@@ -77,3 +77,11 @@ func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) b
 		return false
 	}
 }
+
+func FastInitWorkCenterSerializer() *WorkCenterSerializer {
+	workCenterSerializer := BuildWorkCenterSerializer(
+		atomic_work_center.NewAtomicWorkCenter(),
+	)
+	workCenterSerializer.WorkerCenterSerializerThread(3)
+	return workCenterSerializer
+}

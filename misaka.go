@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	workcenterserializer "misakadb/atomic/atomicWorkCenter/WorkCenterSerializer"
 	"misakadb/clilog"
 	"misakadb/config"
 	"misakadb/lock/global_lock"
@@ -30,8 +31,10 @@ func printTitle(cfg *config.MisakaConfigure) {
 
 func main() {
 	flag.Parse()
-	tui.Thread_start()
-	global_lock.StartLoPoolGC()
+
+	tui.Thread_start()                                  // 启动TUI线程监听
+	global_lock.StartLoPoolGC()                         // 启动全局锁池回收期
+	workcenterserializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo
