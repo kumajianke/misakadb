@@ -2,6 +2,7 @@ package workcenterserializer
 
 import (
 	"encoding/json"
+	eventbus "misakadb/atomic/EventBus"
 	atomic_work_center "misakadb/atomic/atomicWorkCenter"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
@@ -59,6 +60,7 @@ func (this *WorkCenterSerializer) Dump() {
 	this._thread__chan <- "dump_success"
 }
 
+// 协程处理作业中心序列化器
 func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) bool {
 	go this.Dump()
 	select {
@@ -78,10 +80,37 @@ func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) b
 	}
 }
 
+// 快速启动原子作业持久化
 func FastInitWorkCenterSerializer() *WorkCenterSerializer {
 	workCenterSerializer := BuildWorkCenterSerializer(
 		atomic_work_center.NewAtomicWorkCenter(),
 	)
-	workCenterSerializer.WorkerCenterSerializerThread(3)
+	eb := eventbus.NewAtomicWorkCenter()
+	go func() {
+		clilog.Success("[Atomic Work Center Serializer]fast boot over!")
+		for msg := range eb.EventBus {
+			if msg == "sync-to-local" {
+				workCenterSerializer.WorkerCenterSerializerThread(3)
+			}
+		}
+	}()
+	return workCenterSerializer
+}
+
+// 加载本地持久化信息
+func LoadWorkCenterSerializer() *WorkCenterSerializer {
+	workCenterSerializer := &WorkCenterSerializer{}
+
+	jsonData, err := os.ReadFile(".data/work_center.json")
+	if err != nil {
+		clilog.Warning("No File To Load")
+		return nil
+	}
+
+	if err := json.Unmarshal(jsonData, workCenterSerializer); err != nil {
+		clilog.Error("[loadwork-center]" + err.Error())
+		return nil
+	}
+
 	return workCenterSerializer
 }

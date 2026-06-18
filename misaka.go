@@ -32,9 +32,12 @@ func printTitle(cfg *config.MisakaConfigure) {
 func main() {
 	flag.Parse()
 
+	// 插件加载
+	clilog.Info("[plugins loading...]")
 	tui.Thread_start()                                  // 启动TUI线程监听
 	global_lock.StartLoPoolGC()                         // 启动全局锁池回收期
 	workcenterserializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
+	clilog.Success("[plugins load over")
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo

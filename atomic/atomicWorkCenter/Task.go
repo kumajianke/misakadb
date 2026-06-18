@@ -15,9 +15,10 @@ const (
 )
 
 type Task struct {
-	TaskStatus      EnumTaskStatus
-	TaskReleaseTime time.Time
-	TaskBody        []*tasktype.TaskTypeShip
+	TaskCurrentIndex int // 完成的索引ID
+	TaskStatus       EnumTaskStatus
+	TaskReleaseTime  time.Time
+	TaskBody         []*tasktype.TaskTypeShip
 }
 
 func NewTask(taskBody []*tasktype.TaskTypeShip) *Task {

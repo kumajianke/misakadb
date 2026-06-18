@@ -3,6 +3,8 @@ package atomic_work_center
 import (
 	"crypto/md5"
 	"math/rand"
+	eventbus "misakadb/atomic/EventBus"
+	"misakadb/clilog"
 	"strconv"
 	"time"
 
@@ -54,6 +56,24 @@ func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 }
 
 // 让作业继续下一步
-func (this *AtomicWorkCenter) DoNext() {
+func (this *AtomicWorkCenter) DoNext(taskId string) {
+	task := this.GetTask(taskId)
 
+	// 长度验证
+	if task.TaskCurrentIndex+1 >= len(task.TaskBody) {
+		clilog.Error("[AtomicWorkCenter] Index Error!")
+	}
+
+	// 作业状态信息验证
+	if task.TaskStatus == Pending && task.TaskCurrentIndex == 0 {
+		// 状态为等待状态修改为Running
+		task.TaskStatus = Running
+	} else if task.TaskStatus == BackRoll {
+		// TODO 回滚机制
+	} else if task.TaskStatus == Success {
+		this.TasksMap.LoadAndDelete(taskId) // 任务完成 需要进行删除操作
+	}
+	var eb *eventbus.AtomicWorkEventBus
+	eb = eventbus.NewAtomicWorkCenter()
+	eb.EventBus <- "sync-to-local"
 }
