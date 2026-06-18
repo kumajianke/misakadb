@@ -8,11 +8,13 @@ import (
 func TestTask() {
 	atomicWorkCenter := atomic_work_center.NewAtomicWorkCenter()
 	task := atomic_work_center.NewTask(nil)
-	task.TaskBody = []*tasktype.TaskTypeShip{
-		tasktype.NewTaskTypeShip(
-			tasktype.TaskRemoveFile,
-			"test.txt",
-		),
+
+	task.TaskBody = tasktype.NewShipBuilder().Add(
+		tasktype.TaskModFile,
+		"xx.file",
+	).Build()
+	ok, task_id := atomicWorkCenter.AddTask(task, 3)
+	if ok {
+		atomicWorkCenter.DoNext(task_id)
 	}
-	atomicWorkCenter.AddTask(task, 3)
 }

@@ -32,18 +32,19 @@ func NewAtomicWorkCenter() *AtomicWorkCenter {
 }
 
 // 添加作业
-func (this *AtomicWorkCenter) AddTask(task *Task, retry int) bool {
+func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
 	now := time.Now().Format("2006-1-2 15:04:05") + strconv.Itoa(rand.Intn(30000)+1)
 	md5Hash := md5.Sum([]byte(now))
-	_, loaded := this.TasksMap.LoadOrStore(string(md5Hash[:]), task)
+	string_md5 := string(md5Hash[:])
+	_, loaded := this.TasksMap.LoadOrStore(string_md5, task)
 	if loaded {
 		// 如果Map中存在
 		if retry <= 0 {
-			return false
+			return false, ""
 		}
 		return this.AddTask(task, retry-1)
 	}
-	return true
+	return true, string_md5
 }
 
 // 获取指定作业的ID
