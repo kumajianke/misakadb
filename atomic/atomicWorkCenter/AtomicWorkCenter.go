@@ -59,6 +59,11 @@ func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 func (this *AtomicWorkCenter) DoNext(taskId string) {
 	task := this.GetTask(taskId)
 
+	if task == nil {
+		clilog.Error("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
+		return
+	}
+
 	// 长度验证
 	if task.TaskCurrentIndex+1 >= len(task.TaskBody) {
 		clilog.Error("[AtomicWorkCenter] Index Error!")
@@ -72,6 +77,8 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 		// TODO 回滚机制
 	} else if task.TaskStatus == Success {
 		this.TasksMap.LoadAndDelete(taskId) // 任务完成 需要进行删除操作
+	} else if task.TaskStatus == Running {
+		// TODO 运行下一个函数
 	}
 	var eb *eventbus.AtomicWorkEventBus
 	eb = eventbus.NewAtomicWorkCenter()
