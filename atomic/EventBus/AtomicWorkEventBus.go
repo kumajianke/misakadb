@@ -6,7 +6,7 @@ type AtomicWorkEventBus struct {
 
 var AtomicWorkEventBusInstance *AtomicWorkEventBus
 
-func NewAtomicWorkCenter() *AtomicWorkEventBus {
+func NewAtomicWorkCenterEventBus() *AtomicWorkEventBus {
 	if AtomicWorkEventBusInstance == nil {
 		AtomicWorkEventBusInstance = &AtomicWorkEventBus{
 			EventBus: make(chan string, 10),

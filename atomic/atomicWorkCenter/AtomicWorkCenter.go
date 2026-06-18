@@ -81,6 +81,6 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 		// TODO 运行下一个函数
 	}
 	var eb *eventbus.AtomicWorkEventBus
-	eb = eventbus.NewAtomicWorkCenter()
+	eb = eventbus.NewAtomicWorkCenterEventBus()
 	eb.EventBus <- "sync-to-local"
 }

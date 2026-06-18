@@ -85,7 +85,7 @@ func FastInitWorkCenterSerializer() *WorkCenterSerializer {
 	workCenterSerializer := BuildWorkCenterSerializer(
 		atomic_work_center.NewAtomicWorkCenter(),
 	)
-	eb := eventbus.NewAtomicWorkCenter()
+	eb := eventbus.NewAtomicWorkCenterEventBus()
 	go func() {
 		clilog.Success("[Atomic Work Center Serializer]fast boot over!")
 		for msg := range eb.EventBus {
