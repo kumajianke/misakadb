@@ -1,4 +1,4 @@
-package atomic_work_center
+package tasktype
 
 type TaskType string
 

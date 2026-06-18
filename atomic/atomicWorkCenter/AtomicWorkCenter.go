@@ -29,6 +29,7 @@ func NewAtomicWorkCenter() *AtomicWorkCenter {
 	return AtomicWorkCenterInstance
 }
 
+// 添加作业
 func (this *AtomicWorkCenter) AddTask(task *Task, retry int) bool {
 	now := time.Now().Format("2006-1-2 15:04:05") + strconv.Itoa(rand.Intn(30000)+1)
 	md5Hash := md5.Sum([]byte(now))
@@ -43,10 +44,16 @@ func (this *AtomicWorkCenter) AddTask(task *Task, retry int) bool {
 	return true
 }
 
+// 获取指定作业的ID
 func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 
 	if task, ok := this.TasksMap.Load(taskId); ok {
 		return task
 	}
 	return nil
+}
+
+// 让作业继续下一步
+func (this *AtomicWorkCenter) DoNext() {
+
 }

@@ -1,5 +1,10 @@
 package atomic_work_center
 
+import (
+	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
+	"time"
+)
+
 type EnumTaskStatus int
 
 const (
@@ -11,6 +16,14 @@ const (
 
 type Task struct {
 	TaskStatus      EnumTaskStatus
-	TaskReleaseTime int64
-	TaskBody        []*TaskTypeShip
+	TaskReleaseTime time.Time
+	TaskBody        []*tasktype.TaskTypeShip
+}
+
+func NewTask(taskBody []*tasktype.TaskTypeShip) *Task {
+	return &Task{
+		TaskStatus:      Pending,
+		TaskReleaseTime: time.Now().Add(time.Second * 10), // 十秒后过期
+		TaskBody:        taskBody,
+	}
 }
