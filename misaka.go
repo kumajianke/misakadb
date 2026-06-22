@@ -35,7 +35,7 @@ func main() {
 	// 插件加载
 	clilog.Info("[plugins loading...]")
 	tui.Thread_start()                                  // 启动TUI线程监听
-	global_lock.StartLoPoolGC()                         // 启动全局锁池回收期
+	global_lock.StartLockPoolGC()                       // 启动全局锁池回收期
 	workcenterserializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
 	clilog.Success("[plugins load over")
 

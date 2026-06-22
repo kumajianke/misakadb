@@ -152,7 +152,7 @@ func lockPoolsGCThread() {
 	})
 }
 
-func StartLoPoolGC() {
+func StartLockPoolGC() {
 	go func() {
 		for {
 			lockPoolsGCThread()
