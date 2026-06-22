@@ -2,6 +2,49 @@ import { blogPlugin } from '@vuepress/plugin-blog'
 import { defaultTheme } from '@vuepress/theme-default'
 import { defineUserConfig } from 'vuepress'
 import { viteBundler } from '@vuepress/bundler-vite'
+import { copyFile, cp, mkdir, readdir, stat } from 'node:fs/promises'
+import path from 'node:path'
+
+const IMAGE_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.svg',
+  '.ico',
+  '.bmp',
+  '.avif',
+])
+
+const isImageFile = (fileName) => IMAGE_EXTENSIONS.has(path.extname(fileName).toLowerCase())
+
+const copyRootImages = async (sourceDir, destDir) => {
+  const entries = await readdir(sourceDir, { withFileTypes: true })
+
+  await Promise.all(
+    entries
+      .filter((entry) => entry.isFile() && isImageFile(entry.name))
+      .map((entry) =>
+        copyFile(path.join(sourceDir, entry.name), path.join(destDir, entry.name)),
+      ),
+  )
+}
+
+const copyImgsDirectory = async (sourceDir, destDir) => {
+  const imgsSourceDir = path.join(sourceDir, 'imgs')
+  const imgsDestDir = path.join(destDir, 'imgs')
+
+  try {
+    const imgsStat = await stat(imgsSourceDir)
+    if (!imgsStat.isDirectory()) return
+  } catch {
+    return
+  }
+
+  await mkdir(imgsDestDir, { recursive: true })
+  await cp(imgsSourceDir, imgsDestDir, { recursive: true, force: true })
+}
 
 export default defineUserConfig({
   lang: 'en-US',
@@ -32,6 +75,16 @@ export default defineUserConfig({
   }),
 
   plugins: [
+    {
+      name: 'copy-doc-images',
+      onGenerated: async (app) => {
+        const sourceDir = app.dir.source()
+        const destDir = app.dir.dest()
+
+        await copyRootImages(sourceDir, destDir)
+        await copyImgsDirectory(sourceDir, destDir)
+      },
+    },
     blogPlugin({
       // Only files under posts are articles
       filter: ({ filePathRelative }) =>
