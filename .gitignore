@@ -20,4 +20,3 @@ ENV/
 *.log
 
 node_modules/
-.vuepress/
