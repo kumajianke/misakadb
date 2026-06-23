@@ -1,5 +1,9 @@
 package eventbus
 
+/**
+ * 原子任务中心事件总线 用于原子任务中心的内部通讯
+ */
+
 type AtomicWorkEventBus struct {
 	EventBus chan string
 }

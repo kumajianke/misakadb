@@ -1,4 +1,4 @@
-package generashares
+package shares
 
 import "runtime"
 

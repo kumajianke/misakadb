@@ -8,7 +8,7 @@ actions:
     link: /get-started.html
     type: primary
 
-  - text: misakaDB
+  - text: 下载
     link: https://gitee.com/kumare/misakadb
     type: secondary
 
