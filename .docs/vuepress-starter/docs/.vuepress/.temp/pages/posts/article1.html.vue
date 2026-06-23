@@ -1,9 +1,24 @@
 <template><div><h1 id="全局锁池" tabindex="-1"><a class="header-anchor" href="#全局锁池"><span>全局锁池</span></a></h1>
-<h2 id="什么是全局锁池" tabindex="-1"><a class="header-anchor" href="#什么是全局锁池"><span>什么是全局锁池</span></a></h2>
 <div class="hint-container tip">
-<p class="hint-container-title">Tips</p>
+<p class="hint-container-title">什么是全局锁池</p>
 <p>全局锁池可以帮助我们快速的在项目中对某个资源、操作句柄进行上锁。</p>
 </div>
+<h2 id="全局锁池的实现" tabindex="-1"><a class="header-anchor" href="#全局锁池的实现"><span>全局锁池的实现</span></a></h2>
+<p>全局锁池内部被划分为两个子池：</p>
+<ul>
+<li><code v-pre>YoungPool</code>：存储当前高频访问、命中率较高的热点锁</li>
+<li><code v-pre>OldPool</code>：存储暂时降级的锁，用于后续淘汰和回收判断</li>
+</ul>
+<p>业务线程在获取锁时，会优先查询 <code v-pre>YoungPool</code>。如果未命中，再继续查询 <code v-pre>OldPool</code>。一旦在 <code v-pre>OldPool</code> 中找到目标锁，就会将该锁重新提升到 <code v-pre>YoungPool</code>，从而让热点锁始终尽量停留在更快命中的路径上。</p>
+<p>为了降低并发争用，双池查询使用基于 <code v-pre>xsync.Map</code> 的并发 Map 实现，避免传统全局互斥锁在高并发场景下造成过多阻塞。锁对象内部还维护了一个基于原子操作的引用计数器 <code v-pre>RefCounter</code>，用于记录锁的活跃状态。每次成功加锁时增加计数，每次释放锁时减少计数，这样后续在进行分代回收时，就可以更安全地判断哪些锁已经不再被业务使用。</p>
+<p>当前实现已经具备以下能力：</p>
+<ul>
+<li>基于全局单例方式统一维护锁池</li>
+<li>基于双池结构实现热点锁读取与旧锁提升</li>
+<li>使用原子引用计数跟踪锁的使用状态</li>
+<li>使用并发安全的 Map 降低锁池本身的竞争开销</li>
+</ul>
+<p>当前版本中，后台 GC 守护协程与完整的“年轻代批量降级、旧生代按引用计数回收”机制仍在持续完善中。也就是说，现阶段已经完成了全局锁池的核心访问链路与数据结构设计，而分代淘汰和自动回收属于下一阶段重点增强能力。</p>
 <h2 id="使用方法" tabindex="-1"><a class="header-anchor" href="#使用方法"><span>使用方法</span></a></h2>
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">import</span> <span class="token punctuation">(</span></span>
 <span class="line">	<span class="token string">"misakadb/lock/global_lock"</span></span>

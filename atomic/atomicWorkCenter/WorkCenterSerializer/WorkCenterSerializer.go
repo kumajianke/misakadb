@@ -3,6 +3,7 @@ package workcenterserializer
 import (
 	"encoding/json"
 	eventbus "misakadb/atomic/EventBus"
+	atomic_file_handler "misakadb/atomic/atomicFileHandler"
 	atomic_work_center "misakadb/atomic/atomicWorkCenter"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
@@ -32,6 +33,7 @@ func BuildWorkCenterSerializer(wc *atomic_work_center.AtomicWorkCenter) *WorkCen
 }
 
 func (this *WorkCenterSerializer) Dump() {
+	// 加锁
 	_, unlock, err := global_lock.GetOrStoreGlobalLock("WorkCenterSerializerDump", "l")
 	if err != nil {
 		this._thread__chan <- "file_write_error"
@@ -39,6 +41,7 @@ func (this *WorkCenterSerializer) Dump() {
 	}
 	defer unlock()
 
+	// 创建文件夹
 	if _, err = os.Stat(".data"); err != nil {
 		err = os.Mkdir(".data", 0700)
 		if err != nil {
@@ -47,16 +50,26 @@ func (this *WorkCenterSerializer) Dump() {
 		}
 	}
 
+	// 存储Marshal化数据
 	jsonData, err := json.Marshal(this)
+
+	_, err = atomic_file_handler.ChunkAtomicSyncWriteFile(
+		".data/work_center.json",
+		jsonData,
+		0644,
+	)
+
 	if err != nil {
 		this._thread__chan <- "file_write_error"
 		return
 	}
-	err = os.WriteFile(".data/work_center.json", jsonData, 0700)
+	// 强制刷盘
+
 	if err != nil {
 		this._thread__chan <- "file_write_error"
 		return
 	}
+
 	this._thread__chan <- "dump_success"
 }
 

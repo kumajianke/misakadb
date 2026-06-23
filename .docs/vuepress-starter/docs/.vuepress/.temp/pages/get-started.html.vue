@@ -4,6 +4,10 @@
 <p>[!NOTE]
 便捷简单的文档数据库，始终如一。</p>
 </blockquote>
+<div class="hint-container tip">
+<p class="hint-container-title">Tips</p>
+<p>misaka的命名来自动漫《魔法禁书目录》、《某科学的超电池炮》的炮姐，御坂美琴中的御坂(misaka)及衍生的御坂网络，在后期我们也会仿造misaka来实现对应的分布式技术。</p>
+</div>
 <p><code v-pre>MisakaDB</code> 是一个轻量级的 JSON 文档数据库，支持 <code v-pre>JSON</code> 格式的内容字段存储。在 0.0.3 版本，仅支持单机模式。</p>
 <h2 id="特性" tabindex="-1"><a class="header-anchor" href="#特性"><span>特性</span></a></h2>
 <ul>
@@ -16,22 +20,6 @@
 </ul>
 <h2 id="全局锁池" tabindex="-1"><a class="header-anchor" href="#全局锁池"><span>全局锁池</span></a></h2>
 <p>MisakaDB 在锁管理上引入了全局锁池设计，用统一的池化方式管理业务锁对象，减少重复创建与散落管理带来的开销。整个方案围绕“双池分代 + 原子引用计数 + 热点锁升级”展开，目标是在保证并发性能的同时，为后续锁回收和长期运行时的内存稳定性打下基础。</p>
-<h3 id="原理" tabindex="-1"><a class="header-anchor" href="#原理"><span>原理</span></a></h3>
-<p>全局锁池内部被划分为两个子池：</p>
-<ul>
-<li><code v-pre>YoungPool</code>：存储当前高频访问、命中率较高的热点锁</li>
-<li><code v-pre>OldPool</code>：存储暂时降级的锁，用于后续淘汰和回收判断</li>
-</ul>
-<p>业务线程在获取锁时，会优先查询 <code v-pre>YoungPool</code>。如果未命中，再继续查询 <code v-pre>OldPool</code>。一旦在 <code v-pre>OldPool</code> 中找到目标锁，就会将该锁重新提升到 <code v-pre>YoungPool</code>，从而让热点锁始终尽量停留在更快命中的路径上。</p>
-<p>为了降低并发争用，双池查询使用基于 <code v-pre>xsync.Map</code> 的并发 Map 实现，避免传统全局互斥锁在高并发场景下造成过多阻塞。锁对象内部还维护了一个基于原子操作的引用计数器 <code v-pre>RefCounter</code>，用于记录锁的活跃状态。每次成功加锁时增加计数，每次释放锁时减少计数，这样后续在进行分代回收时，就可以更安全地判断哪些锁已经不再被业务使用。</p>
-<p>当前实现已经具备以下能力：</p>
-<ul>
-<li>基于全局单例方式统一维护锁池</li>
-<li>基于双池结构实现热点锁读取与旧锁提升</li>
-<li>使用原子引用计数跟踪锁的使用状态</li>
-<li>使用并发安全的 Map 降低锁池本身的竞争开销</li>
-</ul>
-<p>当前版本中，后台 GC 守护协程与完整的“年轻代批量降级、旧生代按引用计数回收”机制仍在持续完善中。也就是说，现阶段已经完成了全局锁池的核心访问链路与数据结构设计，而分代淘汰和自动回收属于下一阶段重点增强能力。</p>
 <h3 id="设计价值" tabindex="-1"><a class="header-anchor" href="#设计价值"><span>设计价值</span></a></h3>
 <ul>
 <li>减少业务层重复创建锁对象的成本</li>
@@ -40,25 +28,43 @@
 <li>为长期运行场景中的锁对象治理和内存回收预留扩展空间</li>
 </ul>
 <h2 id="项目结构" tabindex="-1"><a class="header-anchor" href="#项目结构"><span>项目结构</span></a></h2>
-<div class="language-text line-numbers-mode" data-highlighter="prismjs" data-ext="text"><pre v-pre><code><span class="line">misakadb/</span>
-<span class="line">├── bin/                    # 编译后的二进制文件</span>
-<span class="line">├── client/                 # Python 客户端</span>
-<span class="line">│   ├── apis/              # API 实现</span>
-<span class="line">│   ├── interface/        # 接口定义</span>
-<span class="line">│   ├── network/           # 网络通信</span>
-<span class="line">│   └── usage/             # 使用示例</span>
-<span class="line">├── clilog/                 # 日志模块</span>
-<span class="line">├── command/                # 命令处理</span>
-<span class="line">├── config/                 # 配置管理</span>
-<span class="line">├── engine/                 # 数据库引擎</span>
-<span class="line">├── misaka-doc/             # 文档</span>
-<span class="line">├── network/                # 网络层</span>
-<span class="line">├── profiles/               # 配置文件</span>
-<span class="line">├── safe/                   # 安全模块</span>
-<span class="line">├── tools/                  # 工具集</span>
-<span class="line">└── miusers/                # 用户管理</span>
+<div class="language-text line-numbers-mode" data-highlighter="prismjs" data-ext="text"><pre v-pre><code><span class="line">misaka_db/</span>
+<span class="line">├── .docs/                  # VuePress 文档工程</span>
+<span class="line">│   └── vuepress-starter/   # 文档站点源码与构建配置</span>
+<span class="line">├── atomic/                 # 原子任务、事件总线与文件操作能力</span>
+<span class="line">│   ├── EventBus/           # 原子任务事件总线</span>
+<span class="line">│   ├── atomicFileHandler/  # 原子文件写入等操作</span>
+<span class="line">│   └── atomicWorkCenter/   # 原子任务中心、序列化与任务类型</span>
+<span class="line">├── bin/                    # 编译产物与运行时配置</span>
+<span class="line">├── client/                 # Python 客户端 SDK 与打包脚本</span>
+<span class="line">│   ├── apis/               # 客户端 API</span>
+<span class="line">│   ├── interface/          # 状态与接口定义</span>
+<span class="line">│   ├── mql/                # MQL 相关调用封装</span>
+<span class="line">│   ├── network/            # 客户端网络通信</span>
+<span class="line">│   └── usage/              # 使用示例</span>
+<span class="line">├── clilog/                 # 日志输出模块</span>
+<span class="line">├── command/                # 命令分发与工具命令实现</span>
+<span class="line">├── config/                 # 配置加载与映射</span>
+<span class="line">├── db-datas/               # 本地数据库数据目录</span>
+<span class="line">├── engine/                 # 存储引擎与查询实现</span>
+<span class="line">│   ├── Mson/               # MSON 解析</span>
+<span class="line">│   ├── base/               # 引擎基础能力</span>
+<span class="line">│   ├── db_list/            # 数据库列表管理</span>
+<span class="line">│   ├── dispatch/           # 引擎分发工厂</span>
+<span class="line">│   ├── share/              # MIQL 共享逻辑</span>
+<span class="line">│   └── tinydb/             # TinyDB 核心、索引与数据集</span>
+<span class="line">├── lock/                   # 全局锁池与锁前缀</span>
+<span class="line">├── miusers/                # 用户管理</span>
+<span class="line">├── network/                # 服务端网络层与注册中心</span>
+<span class="line">├── profiles/               # 默认配置与用户数据</span>
+<span class="line">├── safe/                   # 加密与安全模块</span>
+<span class="line">├── shares/                 # 跨模块共享工具</span>
+<span class="line">├── tools/                  # 工具程序入口</span>
+<span class="line">├── tui/                    # 终端 UI 能力</span>
+<span class="line">├── misaka.go               # 服务主入口</span>
+<span class="line">└── go.mod                  # Go 模块定义</span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h2 id="快速开始" tabindex="-1"><a class="header-anchor" href="#快速开始"><span>快速开始</span></a></h2>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h2 id="快速开始" tabindex="-1"><a class="header-anchor" href="#快速开始"><span>快速开始</span></a></h2>
 <h3 id="启动服务端" tabindex="-1"><a class="header-anchor" href="#启动服务端"><span>启动服务端</span></a></h3>
 <h4 id="源码启动" tabindex="-1"><a class="header-anchor" href="#源码启动"><span>源码启动</span></a></h4>
 <p>需要安装 Go 语言环境后执行：</p>

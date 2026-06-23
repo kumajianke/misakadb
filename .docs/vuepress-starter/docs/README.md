@@ -20,9 +20,10 @@ features:
   - title: 全局锁池
     details: 实现全局锁池，确保在高并发环境下，每个事务只能被一个线程执行。
 
-footer: MIT Licensed | Copyright © 2018-present VuePress Community
+footer: MIT Licensed | Copyright © 库码工作室  & vuepress-starter
 ---
 
 This is the content of home page. Check [Home Page Docs][default-theme-home] for more details.
 
 [default-theme-home]: https://vuejs.press/reference/default-theme/frontmatter.html#home-page
+[库码工作室]: https://gitee.com/kumare

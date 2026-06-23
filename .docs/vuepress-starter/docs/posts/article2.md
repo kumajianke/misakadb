@@ -9,7 +9,7 @@ description: 原子任务中心介绍
 ---
 
 # 原子任务中心的作用
-当客户端发来miql之后，misakadb要统一进行解析，为了保持miql的任务的原子性、一致性、隔离性、持久性这四个属性，misakaDB需要一个原子任务中心来管理所有的任务。
+当客户端发来<span style="color:#0099FF">`miql`</span>之后，misakadb要统一进行解析，为了保持miql的任务的原子性、一致性、隔离性、持久性这四个属性，misakaDB需要一个原子任务中心来管理所有的任务。
 
 > 如当用户发送一个删除任务，这个任务拆分下来就是需要对文件、JSON等进行删除的多个子任务。这些任务需要保证要么不执行要么全部执行。
 
@@ -28,3 +28,15 @@ ok, task_id := atomic.addTask(task, 3) // 尝试添加任务到原子中心 可�
 // ok: 表示是否添加成功
 // task_id: 表示任务在中心的唯一标志
 ```
+
+# 原子日志序列器
+<span style="color:#0099FF">**AtomicWorkCenter**</span> 管理着所有的任务，我们将这些任务数据可以称为WAL日志。防止宕机等问题导致的数据丢失，我们会在启动之后启动对应的序列器协程。如果需要让协程启动序列化任务可以使用AtomicWorkEventBus总线进行信号通知。
+
+```go
+var eb *eventbus.AtomicWorkEventBus
+eb = eventbus.NewAtomicWorkCenterEventBus()
+eb.EventBus <- "sync-to-local" // 通知序列器协程启动序列化任务
+```
+
+我们也可以加载本地日志到内存:
+

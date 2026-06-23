@@ -52,23 +52,41 @@ MisakaDB 在锁管理上引入了全局锁池设计，用统一的池化方式�
 ## 项目结构
 
 ```
-misakadb/
-├── bin/                    # 编译后的二进制文件
-├── client/                 # Python 客户端
-│   ├── apis/              # API 实现
-│   ├── interface/        # 接口定义
-│   ├── network/           # 网络通信
-│   └── usage/             # 使用示例
-├── clilog/                 # 日志模块
-├── command/                # 命令处理
-├── config/                 # 配置管理
-├── engine/                 # 数据库引擎
-├── misaka-doc/             # 文档
-├── network/                # 网络层
-├── profiles/               # 配置文件
-├── safe/                   # 安全模块
-├── tools/                  # 工具集
-└── miusers/                # 用户管理
+misaka_db/
+├── .docs/                  # VuePress 文档工程
+│   └── vuepress-starter/   # 文档站点源码与构建配置
+├── atomic/                 # 原子任务、事件总线与文件操作能力
+│   ├── EventBus/           # 原子任务事件总线
+│   ├── atomicFileHandler/  # 原子文件写入等操作
+│   └── atomicWorkCenter/   # 原子任务中心、序列化与任务类型
+├── bin/                    # 编译产物与运行时配置
+├── client/                 # Python 客户端 SDK 与打包脚本
+│   ├── apis/               # 客户端 API
+│   ├── interface/          # 状态与接口定义
+│   ├── mql/                # MQL 相关调用封装
+│   ├── network/            # 客户端网络通信
+│   └── usage/              # 使用示例
+├── clilog/                 # 日志输出模块
+├── command/                # 命令分发与工具命令实现
+├── config/                 # 配置加载与映射
+├── db-datas/               # 本地数据库数据目录
+├── engine/                 # 存储引擎与查询实现
+│   ├── Mson/               # MSON 解析
+│   ├── base/               # 引擎基础能力
+│   ├── db_list/            # 数据库列表管理
+│   ├── dispatch/           # 引擎分发工厂
+│   ├── share/              # MIQL 共享逻辑
+│   └── tinydb/             # TinyDB 核心、索引与数据集
+├── lock/                   # 全局锁池与锁前缀
+├── miusers/                # 用户管理
+├── network/                # 服务端网络层与注册中心
+├── profiles/               # 默认配置与用户数据
+├── safe/                   # 加密与安全模块
+├── shares/                 # 跨模块共享工具
+├── tools/                  # 工具程序入口
+├── tui/                    # 终端 UI 能力
+├── misaka.go               # 服务主入口
+└── go.mod                  # Go 模块定义
 ```
 
 ## 快速开始

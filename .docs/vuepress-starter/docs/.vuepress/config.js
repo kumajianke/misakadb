@@ -49,8 +49,8 @@ const copyImgsDirectory = async (sourceDir, destDir) => {
 export default defineUserConfig({
   lang: 'en-US',
 
-  title: 'Wiki of MisakaDB',
-  description: 'misaka DB数据库的wiki',
+  title: '御坂数据库 MisakaDB',
+  description: '不一样的简洁、不一样的体验',
 
   theme: defaultTheme({
     logo: '/logos.png',
