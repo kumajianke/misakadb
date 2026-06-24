@@ -73,7 +73,7 @@ func (this *WorkCenterSerializer) Dump() {
 	this._thread__chan <- "dump_success"
 }
 
-// 协程处理作业中心序列化器
+// 启动协程进行存储 并通过队列监听是否完成
 func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) bool {
 	go this.Dump()
 	select {
