@@ -23,7 +23,10 @@
 <span class="line">eb <span class="token operator">=</span> eventbus<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenterEventBus</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line">eb<span class="token punctuation">.</span>EventBus <span class="token operator">&lt;-</span> <span class="token string">"sync-to-local"</span> <span class="token comment">// 通知序列器协程启动序列化任务</span></span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p>我们也可以加载本地日志到内存:</p>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p>我们也可以加载本地WAL日志到内存:</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">workCenterSerializer <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">LoadWorkCenterSerializer</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>WAL的日志默认储存路径是：<code v-pre>.data/work_center.json</code> ， 如果日志大于1MB的时候，系统会对其进行分片存储。atomic_work_center的本质就是 WAL日志的记录。</p>
 </div></template>
 
 

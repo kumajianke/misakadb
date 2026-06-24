@@ -38,5 +38,10 @@ eb = eventbus.NewAtomicWorkCenterEventBus()
 eb.EventBus <- "sync-to-local" // 通知序列器协程启动序列化任务
 ```
 
-我们也可以加载本地日志到内存:
+我们也可以加载本地WAL日志到内存:
 
+```go
+workCenterSerializer := atomic_work_center.LoadWorkCenterSerializer()
+```
+
+WAL的日志默认储存路径是：`.data/work_center.json` ， 如果日志大于1MB的时候，系统会对其进行分片存储。atomic_work_center的本质就是 WAL日志的记录。

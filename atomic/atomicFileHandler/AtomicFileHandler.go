@@ -1,7 +1,9 @@
 package atomic_file_handler
 
 import (
+	"errors"
 	"fmt"
+	"misakadb/clilog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -30,6 +32,27 @@ func syncDir(dir string) error {
 	}
 	defer d.Close()
 	return d.Sync()
+}
+
+func parseChunkID(chunkFileName string) (int, error) {
+	if filepath.Ext(chunkFileName) != ".tmp" {
+		return 0, fmt.Errorf("invalid chunk file extension: %s", chunkFileName)
+	}
+
+	idPart := chunkFileName[:len(chunkFileName)-len(".tmp")]
+	if idPart == "" {
+		return 0, fmt.Errorf("empty chunk file id: %s", chunkFileName)
+	}
+
+	id, err := strconv.Atoi(idPart)
+	if err != nil {
+		return 0, fmt.Errorf("invalid chunk file name: %s", chunkFileName)
+	}
+	if id < 0 {
+		return 0, fmt.Errorf("negative chunk file id: %s", chunkFileName)
+	}
+
+	return id, nil
 }
 
 // 强制写入并同步文件
@@ -125,7 +148,11 @@ func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode)
 	// 尝试吧本次事务的数据持久化到结果来
 	if err := os.Rename(workDir, chunkDir); err != nil {
 		if hasExistingChunkDir {
-			_ = os.Rename(backupDir, chunkDir)
+			rollbackErr := os.Rename(backupDir, chunkDir)
+			if rollbackErr != nil {
+				clilog.Error("restore chunk backup failed:", rollbackErr)
+				return 0, errors.Join(err, fmt.Errorf("restore chunk backup failed: %w", rollbackErr))
+			}
 		}
 		return 0, err
 	}
@@ -160,19 +187,29 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 		return err
 	}
 
+	type chunkFileMeta struct {
+		name string
+		id   int
+	}
+
 	// 过滤并排序分片文件
-	var chunkFiles []string
+	var chunkFiles []chunkFileMeta
 	for _, entry := range entries {
 		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".tmp" {
-			chunkFiles = append(chunkFiles, entry.Name())
+			id, parseErr := parseChunkID(entry.Name())
+			if parseErr != nil {
+				return parseErr
+			}
+			chunkFiles = append(chunkFiles, chunkFileMeta{
+				name: entry.Name(),
+				id:   id,
+			})
 		}
 	}
 
 	// 按分片ID排序
 	sort.Slice(chunkFiles, func(i, j int) bool {
-		idI, _ := strconv.Atoi(chunkFiles[i][:len(chunkFiles[i])-4])
-		idJ, _ := strconv.Atoi(chunkFiles[j][:len(chunkFiles[j])-4])
-		return idI < idJ
+		return chunkFiles[i].id < chunkFiles[j].id
 	})
 
 	if len(chunkFiles) == 0 {
@@ -206,9 +243,9 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 	// 并发读取所有分片
 	for i, chunkFile := range chunkFiles {
 		wg.Add(1)
-		go func(idx int, file string) {
+		go func(idx int, file chunkFileMeta) {
 			defer wg.Done()
-			chunkPath := filepath.Join(chunkDir, file)
+			chunkPath := filepath.Join(chunkDir, file.name)
 			data, readErr := os.ReadFile(chunkPath)
 			resultChan <- chunkData{index: idx, data: data, err: readErr}
 		}(i, chunkFile)
@@ -264,4 +301,25 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 
 	// 删除分片目录
 	return os.RemoveAll(chunkDir)
+}
+
+// 读取分片文件内容
+func ChunkRead(filename string) ([]byte, error) {
+	if err := ChunkMergeFile(filename, 0700); err != nil {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(filename)
+
+	defer func() {
+		if err != nil {
+			err = os.Remove(filename)
+			if err != nil {
+				// ∂_∂ 删除合并后的文件失败
+				clilog.Error("删除合并后的文件失败:", err)
+			}
+		}
+	}()
+
+	return content, err
 }
