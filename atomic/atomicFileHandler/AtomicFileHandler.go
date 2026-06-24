@@ -18,6 +18,8 @@ const (
 	ChunkSize = 1 * 1024 * 1024
 )
 
+var chunkReadLocks sync.Map
+
 // 获取分片存储的目录
 func getChunkDir(filename string) string {
 	dir := filepath.Dir(filename)
@@ -53,6 +55,20 @@ func parseChunkID(chunkFileName string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func getChunkReadLockKey(filename string) string {
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		return filepath.Clean(filename)
+	}
+	return absPath
+}
+
+func getChunkReadLock(filename string) *sync.Mutex {
+	lockKey := getChunkReadLockKey(filename)
+	lock, _ := chunkReadLocks.LoadOrStore(lockKey, &sync.Mutex{})
+	return lock.(*sync.Mutex)
 }
 
 // 强制写入并同步文件
@@ -305,21 +321,13 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 
 // 读取分片文件内容
 func ChunkRead(filename string) ([]byte, error) {
+	lock := getChunkReadLock(filename)
+	lock.Lock()
+	defer lock.Unlock()
+
 	if err := ChunkMergeFile(filename, 0700); err != nil {
 		return nil, err
 	}
 
-	content, err := os.ReadFile(filename)
-
-	defer func() {
-		if err != nil {
-			err = os.Remove(filename)
-			if err != nil {
-				// ∂_∂ 删除合并后的文件失败
-				clilog.Error("删除合并后的文件失败:", err)
-			}
-		}
-	}()
-
-	return content, err
+	return os.ReadFile(filename)
 }
