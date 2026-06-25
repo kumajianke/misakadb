@@ -127,3 +127,35 @@ func LoadWorkCenterSerializer() *WorkCenterSerializer {
 
 	return workCenterSerializer
 }
+
+// 将序列化器转换为原子作业中心
+func (this *WorkCenterSerializer) Convert2AtomicWorkCenter() (*atomic_work_center.AtomicWorkCenter, error) {
+	clilog.Warning("Convert2AtomicWorkCenter Will Overwrite All Tasks In AtomicWorkCenter ! Please Be Careful!")
+
+	// 加上写锁: 1. 序列化器写锁 2. 原子作业中心写锁
+	_, unlock_write_lock_atomic_work_center_serializer, err_ser := global_lock.GetOrStoreGlobalLock("write_lock_atomic_work_center_serializer", "lock")
+	if err_ser != nil {
+		clilog.Error("[Convert2AtomicWorkCenter] acquire serializer lock failed:", err_ser)
+		return nil, err_ser
+	}
+	defer unlock_write_lock_atomic_work_center_serializer()
+
+	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock("write_lock_atomic_work_center", "lock")
+
+	if err != nil {
+		clilog.Error("[Convert2AtomicWorkCenter] acquire atomic work center lock failed:", err)
+		return nil, err
+	}
+	defer unlock_write_lock_atomic_work_center()
+
+	taskMap := this.TaskMap // 序列器所有的map
+	atomicWorkCenter := atomic_work_center.NewAtomicWorkCenter()
+
+	atomicWorkCenter.TasksMap.Clear() // 清空原子作业中心任务映射
+
+	for key, task := range taskMap {
+		atomicWorkCenter.TasksMap.Store(key, task) // 添加任务到原子作业中心任务映射
+	}
+
+	return atomicWorkCenter, nil
+}

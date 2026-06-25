@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	eventbus "misakadb/atomic/EventBus"
 	"misakadb/clilog"
+	"misakadb/lock/global_lock"
 	"strconv"
 	"time"
 
@@ -33,6 +34,14 @@ func NewAtomicWorkCenter() *AtomicWorkCenter {
 
 // 添加作业
 func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
+	// 加上写锁
+	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock("write_lock_atomic_work_center", "lock")
+	if err != nil {
+		clilog.Error("[AtomicWorkCenter.AddTask] acquire write lock failed:", err)
+		return false, ""
+	} // 独占写锁
+	defer unlock_write_lock_atomic_work_center()
+
 	now := time.Now().Format("2006-1-2 15:04:05") + strconv.Itoa(rand.Intn(30000)+1)
 	md5Hash := md5.Sum([]byte(now))
 	string_md5 := string(md5Hash[:])
