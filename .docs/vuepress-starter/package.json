@@ -1,6 +1,6 @@
 {
   "name": "misakadb-wiki",
-  "description": "misaka DB数据库的wiki",
+  "description": "MisakaDB数据库的wiki",
   "version": "0.0.1",
   "license": "MIT",
   "type": "module",

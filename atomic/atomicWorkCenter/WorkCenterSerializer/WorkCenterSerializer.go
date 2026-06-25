@@ -114,7 +114,7 @@ func FastInitWorkCenterSerializer() *WorkCenterSerializer {
 func LoadWorkCenterSerializer() *WorkCenterSerializer {
 	workCenterSerializer := &WorkCenterSerializer{}
 
-	jsonData, err := os.ReadFile(".data/work_center.json")
+	jsonData, err := atomic_file_handler.ChunkRead(".data/work_center.json")
 	if err != nil {
 		clilog.Warning("No File To Load")
 		return nil

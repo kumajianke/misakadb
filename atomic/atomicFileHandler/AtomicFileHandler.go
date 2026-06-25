@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"misakadb/clilog"
+	"misakadb/lock/global_lock"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,8 +19,6 @@ const (
 	ChunkSize = 1 * 1024 * 1024
 )
 
-var chunkReadLocks sync.Map
-
 // 获取分片存储的目录
 func getChunkDir(filename string) string {
 	dir := filepath.Dir(filename)
@@ -27,6 +26,7 @@ func getChunkDir(filename string) string {
 	return filepath.Join(dir, base+".chunk")
 }
 
+// 强制同步落盘目录
 func syncDir(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
@@ -57,6 +57,7 @@ func parseChunkID(chunkFileName string) (int, error) {
 	return id, nil
 }
 
+// 获取分片读锁的key
 func getChunkReadLockKey(filename string) string {
 	absPath, err := filepath.Abs(filename)
 	if err != nil {
@@ -65,10 +66,11 @@ func getChunkReadLockKey(filename string) string {
 	return absPath
 }
 
-func getChunkReadLock(filename string) *sync.Mutex {
+// 获取分片读锁
+func lockChunkRead(filename string) (func(), error) {
 	lockKey := getChunkReadLockKey(filename)
-	lock, _ := chunkReadLocks.LoadOrStore(lockKey, &sync.Mutex{})
-	return lock.(*sync.Mutex)
+	_, unlock, err := global_lock.GetOrStoreGlobalLock("chunk-read:"+lockKey, "lock")
+	return unlock, err
 }
 
 // 强制写入并同步文件
@@ -188,16 +190,23 @@ func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode)
 	return totalChunks, nil
 }
 
-// 合并分片文件到目标文件并删除分片目录
+// 先尝试合并分片，若已是单文件则直接读取
 func ChunkMergeFile(filename string, perm os.FileMode) error {
 	chunkDir := getChunkDir(filename)
-
-	// 检查分片目录是否存在
-	if _, err := os.Stat(chunkDir); os.IsNotExist(err) {
-		return fmt.Errorf("chunk directory not found: %s", chunkDir)
+	if _, err := os.Stat(chunkDir); err != nil {
+		if os.IsNotExist(err) {
+			fileInfo, fileErr := os.Stat(filename)
+			if fileErr == nil && !fileInfo.IsDir() {
+				return nil
+			}
+			if fileErr != nil && !os.IsNotExist(fileErr) {
+				return fileErr
+			}
+			return fmt.Errorf("chunk directory not found: %s", chunkDir)
+		}
+		return err
 	}
 
-	// 读取所有分片文件
 	entries, err := os.ReadDir(chunkDir)
 	if err != nil {
 		return err
@@ -321,9 +330,11 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 
 // 读取分片文件内容
 func ChunkRead(filename string) ([]byte, error) {
-	lock := getChunkReadLock(filename)
-	lock.Lock()
-	defer lock.Unlock()
+	unlock, err := lockChunkRead(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
 
 	if err := ChunkMergeFile(filename, 0700); err != nil {
 		return nil, err
