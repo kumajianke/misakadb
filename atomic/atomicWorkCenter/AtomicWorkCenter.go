@@ -132,6 +132,9 @@ func (this *AtomicWorkCenter) DoSustain(taskId string) error {
 	for task.TaskCurrentIndex < len(task.TaskBody) {
 		this.DoNext(taskId)
 		task.TaskCurrentIndex++
+		eb := eventbus.NewAtomicWorkCenterEventBus()
+		eb.EventBus <- "sync-to-local"
 	}
+	//TODO
 	return nil
 }
