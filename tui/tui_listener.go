@@ -63,7 +63,7 @@ func ansiToTermbox(ansiColor string) termbox.Attribute {
 
 // tuiLogRenderer 由任意 goroutine 调用，追加日志并用 Interrupt 唤醒渲染 goroutine
 func tuiLogRenderer(color, level string, args ...any) {
-	msg := fmt.Sprintf("[%s] %s", level, fmt.Sprint(args...))
+	msg := fmt.Sprintf("[%s][%s] %s", color, level, fmt.Sprint(args...))
 	fg := ansiToTermbox(color)
 
 	logBufferMu.Lock()

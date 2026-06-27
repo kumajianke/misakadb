@@ -1,4 +1,4 @@
-package workcenterserializer
+package work_center_serializer
 
 import (
 	"encoding/json"
@@ -129,8 +129,14 @@ func LoadWorkCenterSerializer() *WorkCenterSerializer {
 }
 
 // 将序列化器转换为原子作业中心
-func (this *WorkCenterSerializer) Convert2AtomicWorkCenter() (*atomic_work_center.AtomicWorkCenter, error) {
-	clilog.Warning("Convert2AtomicWorkCenter Will Overwrite All Tasks In AtomicWorkCenter ! Please Be Careful!")
+func (this *WorkCenterSerializer) Convert2AtomicWorkCenter() (
+	*atomic_work_center.AtomicWorkCenter,
+	error,
+) {
+	clilog.Warning(
+		"Convert2AtomicWorkCenter Will Overwrite All Tasks " +
+			"In Memory AtomicWorkCenter ! Please Be Careful!",
+	)
 
 	// 加上写锁: 1. 序列化器写锁 2. 原子作业中心写锁
 	_, unlock_write_lock_atomic_work_center_serializer, err_ser := global_lock.GetOrStoreGlobalLock("write_lock_atomic_work_center_serializer", "lock")

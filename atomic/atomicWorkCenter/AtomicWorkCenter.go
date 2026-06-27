@@ -94,3 +94,8 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 	eb = eventbus.NewAtomicWorkCenterEventBus()
 	eb.EventBus <- "sync-to-local"
 }
+
+// TODO 持续交付一个作业 直到完成
+func (this *AtomicWorkCenter) DoSustain(taskId string) {
+
+}

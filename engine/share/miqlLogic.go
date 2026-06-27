@@ -2,6 +2,8 @@ package share
 
 import (
 	"errors"
+	atomic_work_center "misakadb/atomic/atomicWorkCenter"
+	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_dispatch "misakadb/engine/dispatch"
@@ -66,6 +68,19 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 	}
 
 	// 具体删除
+
+	work_center := atomic_work_center.NewAtomicWorkCenter() // 原子任务中心
+	task_ship := tasktype.NewShipBuilder().Add(
+		tasktype.TaskRemoveFolder, dbname,
+	).Build()
+
+	remove_task := atomic_work_center.NewTask(task_ship)
+	remove_task.TaskBody = task_ship
+	ok, task_key := work_center.AddTask(remove_task, 3)
+	if !ok {
+		return errors.New("create task failed")
+	}
+	work_center.DoNext(task_key)
 
 	return nil
 }

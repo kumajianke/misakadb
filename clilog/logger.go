@@ -6,6 +6,7 @@ import (
 	tuimode "misakadb/tui/tui-mode"
 	"os"
 	"sync"
+	"time"
 )
 
 // 使用带缓冲的 channel，避免非 CLI 模式下阻塞
@@ -30,19 +31,19 @@ func RegisterTUIRenderer(fn func(color, level string, args ...any)) {
 }
 
 func Info(args ...any) {
-	printlnWithStyle(os.Stdout, "\033[1;34m", "INFO", args...)
+	printlnWithStyle(os.Stdout, "\033[1;34m", "INFO "+time.Now().Format("2006-01-02 15:04:05"), args...)
 }
 
 func Success(args ...any) {
-	printlnWithStyle(os.Stdout, "\033[1;32m", "SUCCESS", args...)
+	printlnWithStyle(os.Stdout, "\033[1;32m", "SUCCESS "+time.Now().Format("2006-01-02 15:04:05"), args...)
 }
 
 func Warning(args ...any) {
-	printlnWithStyle(os.Stdout, "\033[1;33m", "WARNING", args...)
+	printlnWithStyle(os.Stdout, "\033[1;33m", "WARNING "+time.Now().Format("2006-01-02 15:04:05"), args...)
 }
 
 func Error(args ...any) {
-	printlnWithStyle(os.Stderr, "\033[1;31m", "ERROR", args...)
+	printlnWithStyle(os.Stderr, "\033[1;31m", "ERROR "+time.Now().Format("2006-01-02 15:04:05"), args...)
 }
 
 func printlnWithStyle(writer io.Writer, color string, level string, args ...any) {

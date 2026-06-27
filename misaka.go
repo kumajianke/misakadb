@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	workcenterserializer "misakadb/atomic/atomicWorkCenter/WorkCenterSerializer"
+	atomic_work_center "misakadb/atomic/atomicWorkCenter"
+	work_center_serializer "misakadb/atomic/atomicWorkCenter/WorkCenterSerializer"
 	"misakadb/clilog"
 	"misakadb/config"
 	"misakadb/lock/global_lock"
@@ -13,6 +14,7 @@ import (
 	"misakadb/tui"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"strings"
 )
 
@@ -29,15 +31,28 @@ func printTitle(cfg *config.MisakaConfigure) {
 	fmt.Printf("%s\n|%s|\n%s\n\n", border, title, border)
 }
 
+func InitPlugins() {
+	// 插件加载
+	clilog.Info("[plugins loading...]")
+	tui.Thread_start()            // 启动TUI线程监听
+	global_lock.StartLockPoolGC() // 启动全局锁池回收期
+
+	work_center_serializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
+	workCenter := atomic_work_center.NewAtomicWorkCenter()
+	wcs := work_center_serializer.BuildWorkCenterSerializer(workCenter)
+	workCenter, err := wcs.Convert2AtomicWorkCenter()
+	if err != nil {
+		clilog.Error("Convert2AtomicWorkCenter failed:", err)
+		os.Exit(0)
+	}
+}
+
 func main() {
 	flag.Parse()
 
-	// 插件加载
-	clilog.Info("[plugins loading...]")
-	tui.Thread_start()                                  // 启动TUI线程监听
-	global_lock.StartLockPoolGC()                       // 启动全局锁池回收期
-	workcenterserializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
-	clilog.Success("[plugins load over")
+	InitPlugins()
+
+	clilog.Success("--- plugins load over ---")
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo
