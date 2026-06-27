@@ -2,6 +2,7 @@ package atomic_work_center
 
 import (
 	"crypto/md5"
+	"errors"
 	"math/rand"
 	eventbus "misakadb/atomic/EventBus"
 	"misakadb/clilog"
@@ -88,7 +89,7 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 	} else if task.TaskStatus == BackRoll {
 		// TODO 回滚机制
 	} else if task.TaskStatus == Success {
-		this.TasksMap.LoadAndDelete(taskId) // 任务完成 需要进行删除操作
+
 	} else if task.TaskStatus == Running {
 		// TODO 运行下一个函数
 	}
@@ -97,20 +98,40 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 	eb.EventBus <- "sync-to-local"
 }
 
-// TODO 持续交付一个作业 直到完成
-func (this *AtomicWorkCenter) DoSustain(taskId string) {
+func (this *AtomicWorkCenter) RemoveTask(taskId string) *Task {
+	task, _ := this.TasksMap.LoadAndDelete(taskId)
+	return task
+}
+
+// TODO 完成所有的任务的作业本 直到完成
+func (this *AtomicWorkCenter) DoSustain(taskId string) error {
 	task := this.GetTask(taskId)
+
+	// 任务合规性验证
+	if task.TaskReleaseTime.After(time.Now()) {
+		this.RemoveTask(taskId)
+		return errors.New("the task is release now.")
+	}
+	if task.TaskStatus == Success {
+		this.RemoveTask(taskId)
+		return errors.New("the task is finish.")
+	}
+
+	// 任务处理开始
 	if task == nil {
-		clilog.Error("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
-		return
+		return errors.New("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
 	}
 	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock(
 		"write_lock_atomic_work_center", "lock",
 	)
 	if err != nil {
-		clilog.Error("[AtomicWorkCenter] acquire write lock failed:", err)
-		return
+		return errors.New("[AtomicWorkCenter] acquire write lock failed：" + err.Error())
 	} // 独占写锁
 	defer unlock_write_lock_atomic_work_center()
 
+	for task.TaskCurrentIndex < len(task.TaskBody) {
+		this.DoNext(taskId)
+		task.TaskCurrentIndex++
+	}
+	return nil
 }
