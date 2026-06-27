@@ -9,18 +9,18 @@ const (
 )
 
 // 作业类型及参数
-type TaskTypeShip struct {
+type TaskBooks struct {
 	TaskType TaskType
 	Params   []string
 }
 
 // 构造器
 type taskTypeBuilder struct {
-	tasks []*TaskTypeShip
+	tasks []*TaskBooks
 }
 
-func NewTaskTypeShip(taskType TaskType, params ...string) *TaskTypeShip {
-	return &TaskTypeShip{
+func NewTaskBooks(taskType TaskType, params ...string) *TaskBooks {
+	return &TaskBooks{
 		TaskType: taskType,
 		Params:   params,
 	}
@@ -29,13 +29,13 @@ func NewTaskTypeShip(taskType TaskType, params ...string) *TaskTypeShip {
 // 创建新的构造器
 func NewShipBuilder() *taskTypeBuilder {
 	return &taskTypeBuilder{
-		tasks: make([]*TaskTypeShip, 0),
+		tasks: make([]*TaskBooks, 0),
 	}
 }
 
 // 添加任务类型
 func (b *taskTypeBuilder) Add(taskType TaskType, params ...string) *taskTypeBuilder {
-	b.tasks = append(b.tasks, &TaskTypeShip{
+	b.tasks = append(b.tasks, &TaskBooks{
 		TaskType: taskType,
 		Params:   params,
 	})
@@ -43,6 +43,6 @@ func (b *taskTypeBuilder) Add(taskType TaskType, params ...string) *taskTypeBuil
 }
 
 // 构建任务列表
-func (b *taskTypeBuilder) Build() []*TaskTypeShip {
+func (b *taskTypeBuilder) Build() []*TaskBooks {
 	return b.tasks
 }

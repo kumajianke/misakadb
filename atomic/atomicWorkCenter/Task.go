@@ -15,13 +15,13 @@ const (
 )
 
 type Task struct {
-	TaskCurrentIndex int // 完成的索引ID
-	TaskStatus       EnumTaskStatus
-	TaskReleaseTime  time.Time
-	TaskBody         []*tasktype.TaskTypeShip
+	TaskCurrentIndex int                   //  当前任务执行到了哪里
+	TaskStatus       EnumTaskStatus        // 当前任务的状态
+	TaskReleaseTime  time.Time             // 当前任务在什么时候回直接释放
+	TaskBody         []*tasktype.TaskBooks // 当前任务的作业本
 }
 
-func NewTask(taskBody []*tasktype.TaskTypeShip) *Task {
+func NewTask(taskBody []*tasktype.TaskBooks) *Task {
 	return &Task{
 		TaskStatus:      Pending,
 		TaskReleaseTime: time.Now().Add(time.Second * 10), // 十秒后过期

@@ -35,7 +35,9 @@ func NewAtomicWorkCenter() *AtomicWorkCenter {
 // 添加作业
 func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
 	// 加上写锁
-	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock("write_lock_atomic_work_center", "lock")
+	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock(
+		"write_lock_atomic_work_center", "lock",
+	)
 	if err != nil {
 		clilog.Error("[AtomicWorkCenter.AddTask] acquire write lock failed:", err)
 		return false, ""
@@ -97,5 +99,18 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 
 // TODO 持续交付一个作业 直到完成
 func (this *AtomicWorkCenter) DoSustain(taskId string) {
+	task := this.GetTask(taskId)
+	if task == nil {
+		clilog.Error("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
+		return
+	}
+	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock(
+		"write_lock_atomic_work_center", "lock",
+	)
+	if err != nil {
+		clilog.Error("[AtomicWorkCenter] acquire write lock failed:", err)
+		return
+	} // 独占写锁
+	defer unlock_write_lock_atomic_work_center()
 
 }

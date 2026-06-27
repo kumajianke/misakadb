@@ -50,5 +50,9 @@
   {
     "db-name": "Home55",
     "db-engine": "TinyDB"
+  },
+  {
+    "db-name": "service-info",
+    "db-engine": "TinyDB"
   }
 ]
