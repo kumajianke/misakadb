@@ -8,7 +8,7 @@
 <span class="line"><span class="token comment">// 创建一个原子任务中心</span></span>
 <span class="line">task <span class="token operator">=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewTask</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 创建一个空任务</span></span>
-<span class="line">task<span class="token punctuation">.</span>TaskBody <span class="token operator">=</span> tasktype<span class="token punctuation">.</span><span class="token function">NewShipBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<span class="line">task<span class="token punctuation">.</span>TaskBooks <span class="token operator">=</span> tasktype<span class="token punctuation">.</span><span class="token function">NewShipBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line">	<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>tasktype<span class="token punctuation">.</span>TaskModFile<span class="token punctuation">,</span> <span class="token string">"xxx.filename.txt"</span><span class="token punctuation">)</span></span>
 <span class="line">	<span class="token punctuation">.</span><span class="token function">Build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 构建一个任务体，任务体包含需要原子执行的多个任务子作业</span></span>
@@ -27,6 +27,50 @@
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">workCenterSerializer <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">LoadWorkCenterSerializer</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>WAL的日志默认储存路径是：<code v-pre>.data/work_center.json</code> ， 如果日志大于1MB的时候，系统会对其进行分片存储。atomic_work_center的本质就是 WAL日志的记录。</p>
+<h2 id="原子任务中心结构" tabindex="-1"><a class="header-anchor" href="#原子任务中心结构"><span>原子任务中心结构</span></a></h2>
+<p>原子中心有一个map，map管理了多个task，task管理了多个TaskBooks，也就是作业本。</p>
+<p>原子任务中心维护了一个TasksMap，其主要目的是用于管理存储所有的任务。其map数据结构为：</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token operator">*</span>xsync<span class="token punctuation">.</span>MapOf<span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">,</span> <span class="token operator">*</span>Task<span class="token punctuation">]</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>键表示任务的唯一标志，值表示任务体指针。Task是任务体结构，包含多个作业本。
+举一个例子，当我们添加一个任务的时候：</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">center <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<span class="line">ok<span class="token punctuation">,</span> task_id <span class="token operator">:=</span> center<span class="token punctuation">.</span><span class="token function">AddTask</span><span class="token punctuation">(</span>task<span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div></div></div><p>AddTask方式会返回两个值：</p>
+<ul>
+<li>boolean 表示是否添加成功</li>
+<li>string 表示任务在中心的唯一标志</li>
+</ul>
+<p><img src="/static/atomic.png" alt="atomic"></p>
+<h2 id="taskbooks" tabindex="-1"><a class="header-anchor" href="#taskbooks"><span>TaskBooks</span></a></h2>
+<p>TaskBooks是任务的作业本，一个任务由多个作业组成，每个作业表示的是一个细分的操作，通过 TaskType 进行指定作业内容。
+可见源码如下：</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">const</span> <span class="token punctuation">(</span></span>
+<span class="line">	TaskRemoveFile   TaskType <span class="token operator">=</span> <span class="token string">"remove_file"</span></span>
+<span class="line">	TaskModFile      TaskType <span class="token operator">=</span> <span class="token string">"mod_file"</span></span>
+<span class="line">	TaskRemoveFolder TaskType <span class="token operator">=</span> <span class="token string">"remove_folder"</span></span>
+<span class="line"><span class="token punctuation">)</span></span>
+<span class="line"></span>
+<span class="line"><span class="token keyword">type</span> TaskBooks <span class="token keyword">struct</span> <span class="token punctuation">{</span></span>
+<span class="line">	TaskType TaskType</span>
+<span class="line">	Params   <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span></span>
+<span class="line"><span class="token punctuation">}</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h3 id="taskbooks的执行和回滚" tabindex="-1"><a class="header-anchor" href="#taskbooks的执行和回滚"><span>TaskBooks的执行和回滚</span></a></h3>
+<h4 id="执行" tabindex="-1"><a class="header-anchor" href="#执行"><span>执行</span></a></h4>
+<p>执行作业本的方式是采用<code v-pre>原子任务中心</code>，首先需要把<code v-pre>作业本</code>挂载到指定的Task上，然后通过addTask将Task添加到原子任务中心。添加了任务之后，就可以使用原子任务中心的如下方法进行执行了。</p>
+<h5 id="执行的方式" tabindex="-1"><a class="header-anchor" href="#执行的方式"><span>执行的方式</span></a></h5>
+<ul>
+<li><code v-pre>DoNext</code>: 执行下一个作业;</li>
+<li><code v-pre>DoSustain</code>: 从任务执行位置开始继续执行作业;</li>
+</ul>
+<div class="hint-container tip">
+<p class="hint-container-title">Misaka 提醒你</p>
+<p>Task有一个属性叫做TaskCurrentIndex， 用于记录当前的任务的执行位置的，当启动服务之后这个位置不是0状态也不是over的时候表示这个任务可能在执行中途，服务器宕机了。</p>
+</div>
+<h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
+<p>任务中心支持用户自定义作业本的执行方式，用户可以通过实现<code v-pre>TaskBooks</code>的<code v-pre>TaskType</code>来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。</p>
 </div></template>
 
 

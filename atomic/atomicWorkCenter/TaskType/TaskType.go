@@ -2,12 +2,6 @@ package tasktype
 
 type TaskType string
 
-const (
-	TaskRemoveFile   TaskType = "remove_file"
-	TaskModFile      TaskType = "mod_file"
-	TaskRemoveFolder TaskType = "remove_folder"
-)
-
 // 作业类型及参数
 type TaskBooks struct {
 	TaskType TaskType

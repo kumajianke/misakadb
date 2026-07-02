@@ -9,7 +9,7 @@ func TestTask() {
 	atomicWorkCenter := atomic_work_center.NewAtomicWorkCenter()
 	task := atomic_work_center.NewTask(nil)
 
-	task.TaskBody = tasktype.NewShipBuilder().Add(
+	task.TaskBooks = tasktype.NewShipBuilder().Add(
 		tasktype.TaskModFile,
 		"xx.file",
 	).Build()

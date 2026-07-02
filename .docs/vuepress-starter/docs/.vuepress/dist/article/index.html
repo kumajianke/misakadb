@@ -58,7 +58,7 @@
 <span class="line"><span class="token comment">// 创建一个原子任务中心</span></span>
 <span class="line">task <span class="token operator">=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewTask</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 创建一个空任务</span></span>
-<span class="line">task<span class="token punctuation">.</span>TaskBody <span class="token operator">=</span> tasktype<span class="token punctuation">.</span><span class="token function">NewShipBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<span class="line">task<span class="token punctuation">.</span>TaskBooks <span class="token operator">=</span> tasktype<span class="token punctuation">.</span><span class="token function">NewShipBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line">	<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>tasktype<span class="token punctuation">.</span>TaskModFile<span class="token punctuation">,</span> <span class="token string">"xxx.filename.txt"</span><span class="token punctuation">)</span></span>
 <span class="line">	<span class="token punctuation">.</span><span class="token function">Build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 构建一个任务体，任务体包含需要原子执行的多个任务子作业</span></span>

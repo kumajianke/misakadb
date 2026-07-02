@@ -75,7 +75,7 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 	).Build()
 
 	remove_task := atomic_work_center.NewTask(task_ship)
-	remove_task.TaskBody = task_ship
+	remove_task.TaskBooks = task_ship
 	ok, task_key := work_center.AddTask(remove_task, 3)
 	if !ok {
 		return errors.New("create task failed")

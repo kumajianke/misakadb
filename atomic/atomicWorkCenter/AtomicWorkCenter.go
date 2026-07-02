@@ -78,7 +78,7 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 	}
 
 	// 长度验证
-	if task.TaskCurrentIndex+1 >= len(task.TaskBody) {
+	if task.TaskCurrentIndex+1 >= len(task.TaskBooks) {
 		clilog.Error("[AtomicWorkCenter] Index Error!")
 	}
 
@@ -90,7 +90,9 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 		// TODO 回滚机制
 	} else if task.TaskStatus == Success {
 
-	} else if task.TaskStatus == Running {
+	}
+
+	if task.TaskStatus == Running {
 		// TODO 运行下一个函数
 	}
 	var eb *eventbus.AtomicWorkEventBus
@@ -127,14 +129,14 @@ func (this *AtomicWorkCenter) DoSustain(taskId string) error {
 	if err != nil {
 		return errors.New("[AtomicWorkCenter] acquire write lock failed：" + err.Error())
 	} // 独占写锁
-	defer unlock_write_lock_atomic_work_center()
+	defer unlock_write_lock_atomic_work_center() // 解写锁
 
-	for task.TaskCurrentIndex < len(task.TaskBody) {
-		this.DoNext(taskId)
-		task.TaskCurrentIndex++
-		eb := eventbus.NewAtomicWorkCenterEventBus()
-		eb.EventBus <- "sync-to-local"
+	for task.TaskCurrentIndex < len(task.TaskBooks) {
+		this.DoNext(taskId)                          // 执行当前任务的下一个作业
+		task.TaskCurrentIndex++                      // 索引增加以便执行下一个作业
+		eb := eventbus.NewAtomicWorkCenterEventBus() // 创建新的事件总线
+		eb.EventBus <- "sync-to-local"               // 序列化内容到服务器本地 以防止宕机恢复
 	}
-	//TODO
+
 	return nil
 }
