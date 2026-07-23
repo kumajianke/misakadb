@@ -2,7 +2,7 @@ package base_unloader
 
 import tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 
-func AddTaskType(allTaskTypelst []tasktype.TaskType) []tasktype.TaskType {
+func AddTaskType(allTaskTypelst []tasktype.TaskType) ([]tasktype.TaskType, error) {
 	const (
 		TaskRemoveFile   tasktype.TaskType = "remove_file"
 		TaskModFile      tasktype.TaskType = "mod_file"
@@ -11,5 +11,5 @@ func AddTaskType(allTaskTypelst []tasktype.TaskType) []tasktype.TaskType {
 	allTaskTypelst = append(allTaskTypelst, TaskRemoveFile)
 	allTaskTypelst = append(allTaskTypelst, TaskModFile)
 	allTaskTypelst = append(allTaskTypelst, TaskRemoveFolder)
-	return allTaskTypelst
+	return allTaskTypelst, nil
 }
