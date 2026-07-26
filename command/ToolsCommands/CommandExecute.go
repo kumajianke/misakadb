@@ -7,7 +7,7 @@ import (
 	"io"
 	"misakadb/clilog"
 	"misakadb/miusers"
-	"misakadb/safe"
+	"misakadb/shares/safe"
 	"os"
 	"strings"
 
@@ -161,6 +161,35 @@ func CommandExecute(command_all []string) {
 			os.Exit(0)
 		}
 		runAdminCLI(userManager, reader)
+	case "plu-add":
+		if len(command_all) != 2 {
+			clilog.Error("错误用法，正确用法misaka-tools plu-add 插件目录")
+			os.Exit(0)
+		}
+		if err := installPlugin(command_all[1]); err != nil {
+			clilog.Error(err)
+			os.Exit(0)
+		}
+		if err := rebuildAfterPluginChange(); err != nil {
+			clilog.Error("插件安装后自动编译失败:", err)
+			os.Exit(0)
+		}
+		clilog.Success("插件安装成功，已写入 profiles/misaka.yaml 并完成重新编译")
+	case "plu-remove":
+		if len(command_all) != 2 {
+			clilog.Error("错误用法，正确用法misaka-tools plu-remove 插件名")
+			os.Exit(0)
+		}
+		if err := uninstallPlugin(command_all[1]); err != nil {
+			clilog.Error(err)
+			os.Exit(0)
+		}
+		if err := rebuildAfterPluginChange(); err != nil {
+			clilog.Error("插件卸载后自动编译失败:", err)
+			os.Exit(0)
+		}
+		clilog.Success("插件卸载成功，已从 profiles/misaka.yaml 移除并完成重新编译")
+
 	default:
 		clilog.Error("错误的命令, 你无法这么实现。")
 	}
@@ -312,6 +341,8 @@ func printAdminHelp() {
 	clilog.Info("可用命令:")
 	fmt.Println("  chpwd <username>")
 	fmt.Println("  change-password <username>")
+	fmt.Println("  pul-add <path>")
+	fmt.Println("  pul-remove <plugin-name>")
 	fmt.Println("  chmod <username> <role>")
 	fmt.Println("  remove <username>")
 	fmt.Println("  remote <username> <flag>")

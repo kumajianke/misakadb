@@ -10,6 +10,7 @@ import (
 	"misakadb/lock/global_lock"
 	"misakadb/miusers"
 	"misakadb/network/context"
+	pluginsloader "misakadb/plugins/pluginsLoader"
 )
 
 func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
@@ -69,9 +70,14 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 
 	// 具体删除
 
+	dropDBTaskType, ok := pluginsloader.ResolveTaskType("misaka.removefolder")
+	if !ok {
+		return errors.New("drop db task type is not registered")
+	}
+
 	work_center := atomic_work_center.NewAtomicWorkCenter() // 原子任务中心
 	task_ship := tasktype.NewShipBuilder().Add(
-		tasktype.TaskRemoveFolder, dbname,
+		dropDBTaskType, dbname,
 	).Build()
 
 	remove_task := atomic_work_center.NewTask(task_ship)

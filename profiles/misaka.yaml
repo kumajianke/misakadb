@@ -1,18 +1,15 @@
 network:
-  port: 8080
-  address: 0.0.0.0
-  max_conn: 2
-  retry_count: 3
-  retry_delay: 30
-
+    port: 8080
+    address: 0.0.0.0
+    max_conn: 2
+    retry_count: 3
+    retry_delay: 30
 service:
-  version: "0.1.6"
-  version_detail: "基础数据库核心的CRUD实现版本"
-  hide_info: false
-  debug: true
-
+    version: 0.1.6
+    hide_info: false
+    debug: true
 private:
-  storage:
-    path: "./midatas"
-    plugins: []
-
+    storage:
+        path: ./midatas
+        plugins:
+            - 基础加载模块 @misaka

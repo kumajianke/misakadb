@@ -11,6 +11,8 @@ import (
 	"misakadb/network"
 	"misakadb/network/RegisterCenter"
 	"misakadb/network/core"
+	_ "misakadb/plugins/pluginbridge"
+	pluginsloader "misakadb/plugins/pluginsLoader"
 	"misakadb/tui"
 	"net/http"
 	_ "net/http/pprof"
@@ -36,6 +38,10 @@ func InitPlugins() {
 	clilog.Info("[plugins loading...]")
 	tui.Thread_start()            // 启动TUI线程监听
 	global_lock.StartLockPoolGC() // 启动全局锁池回收期
+	if err := pluginsloader.BootstrapPlugins(); err != nil {
+		clilog.Error("BootstrapPlugins failed:", err)
+		os.Exit(0)
+	}
 
 	work_center_serializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
 	workCenter := atomic_work_center.NewAtomicWorkCenter()
@@ -49,10 +55,6 @@ func InitPlugins() {
 
 func main() {
 	flag.Parse()
-
-	InitPlugins()
-
-	clilog.Success("--- plugins load over ---")
 
 	// 加载参数信息到ServiceInfo 用于创建套接字
 	var serviceInfo network.ServiceInfo
@@ -85,6 +87,10 @@ func main() {
 		}
 		serviceInfo = config.ConvertServiceInfo(cfg)
 	}
+
+	InitPlugins()
+
+	clilog.Success("--- plugins load over ---")
 
 	if serviceInfo.Debug {
 		go http.ListenAndServe(":6060", nil)

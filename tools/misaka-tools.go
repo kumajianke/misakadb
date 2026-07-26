@@ -4,6 +4,7 @@ import (
 	"flag"
 	"misakadb/clilog"
 	toolscommands "misakadb/command/ToolsCommands"
+	_ "misakadb/plugins/pluginbridge"
 )
 
 func main() {

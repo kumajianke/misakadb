@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"misakadb/clilog"
 	"misakadb/config"
+	pluginsloader "misakadb/plugins/pluginsLoader"
 	lockshow "misakadb/tui/lock-show"
 	tuibase "misakadb/tui/tui-base"
 	tuimode "misakadb/tui/tui-mode"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/mattn/go-runewidth"
@@ -27,6 +29,7 @@ var menuItems = []menuItem{
 	{"SPACE", "Show The Menu"},
 	{"N", "Log Mode"},
 	{"L", "Lock Mode"},
+	{"P", "Plugins Mode"},
 	{"Q", "Exit (Debug Mode)"},
 }
 
@@ -39,11 +42,21 @@ type logEntry struct {
 	text string
 }
 
+type pluginsInputState int
+
+const (
+        pluginsBrowseState pluginsInputState = iota
+        pluginsCommandInputState
+)
+
 const maxLogBuffer = 500 // 全局日志缓冲条数
 
 var (
-	logBuffer   []logEntry
-	logBufferMu sync.Mutex
+	logBuffer         []logEntry
+	logBufferMu       sync.Mutex
+	pluginModeCommand string
+	pluginModeOutput  []string
+        pluginModeState   = pluginsBrowseState
 )
 
 func ansiToTermbox(ansiColor string) termbox.Attribute {
@@ -124,6 +137,126 @@ func renderLogMode() {
 	}
 
 	termbox.Flush()
+}
+
+func renderPluginsMode() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	w, h := termbox.Size()
+
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			termbox.SetCell(x, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
+		}
+	}
+
+	title := "Plugins Mode - Press SPACE to show menu | Q to exit"
+	tuibase.DrawText(0, 0, termbox.ColorCyan|termbox.AttrBold, termbox.ColorDefault, title)
+
+	for x := 0; x < w; x++ {
+		termbox.SetCell(x, 1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+	}
+
+	configuredPlugins := make([]string, 0)
+	if cfg := config.GetGlobalMisakaConfigure(); cfg != nil {
+		configuredPlugins = append(configuredPlugins, cfg.Private.Storage.Plugins...)
+	}
+	loadedPlugins := pluginsloader.GetLoadedPluginsSnapshot()
+
+	halfW := w / 2
+	tuibase.DrawText(0, 2, termbox.ColorYellow|termbox.AttrBold, termbox.ColorDefault, fmt.Sprintf("Configured Plugins (%d)", len(configuredPlugins)))
+	tuibase.DrawText(halfW, 2, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault, fmt.Sprintf("Loaded Plugins (%d)", len(loadedPlugins)))
+
+	for x := 0; x < w; x++ {
+		termbox.SetCell(x, 3, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+	}
+	for y := 3; y < h; y++ {
+		termbox.SetCell(halfW-2, y, '│', termbox.ColorDarkGray, termbox.ColorDefault)
+	}
+
+	row := 4
+	if len(configuredPlugins) == 0 {
+		tuibase.DrawText(0, row, termbox.ColorDarkGray, termbox.ColorDefault, "(empty)")
+	} else {
+		for _, pluginName := range configuredPlugins {
+			if row >= h-4 {
+				break
+			}
+			tuibase.DrawText(0, row, termbox.ColorWhite, termbox.ColorDefault, pluginName)
+			row++
+		}
+	}
+
+	row = 4
+	if len(loadedPlugins) == 0 {
+		tuibase.DrawText(halfW, row, termbox.ColorDarkGray, termbox.ColorDefault, "(no plugin registered)")
+	} else {
+		for _, pluginName := range loadedPlugins {
+			if row >= h-4 {
+				break
+			}
+			tuibase.DrawText(halfW, row, termbox.ColorWhite, termbox.ColorDefault, pluginName)
+			row++
+		}
+	}
+
+	commandRow := h - 3
+	if commandRow >= 4 {
+		for x := 0; x < w; x++ {
+			termbox.SetCell(x, commandRow-1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		}
+                commandHint := "Command"
+                if pluginModeState == pluginsBrowseState {
+                        commandHint = "Command (: enter)"
+                } else {
+                        commandHint = "Command (input)"
+                }
+                tuibase.DrawText(0, commandRow, termbox.ColorYellow|termbox.AttrBold, termbox.ColorDefault, commandHint)
+		tuibase.DrawText(10, commandRow, termbox.ColorWhite, termbox.ColorDefault, pluginModeCommand)
+	}
+
+	outputStartRow := h - 2
+	if len(pluginModeOutput) > 0 && outputStartRow >= 4 {
+		outputLines := pluginModeOutput
+		if len(outputLines) > 2 {
+			outputLines = outputLines[len(outputLines)-2:]
+		}
+		for idx, line := range outputLines {
+			row := outputStartRow + idx
+			if row >= h {
+				break
+			}
+			tuibase.DrawText(0, row, termbox.ColorGreen, termbox.ColorDefault, line)
+		}
+	}
+
+	termbox.Flush()
+}
+
+func executePluginsModeCommand() {
+	command := strings.TrimSpace(pluginModeCommand)
+	pluginModeOutput = pluginModeOutput[:0]
+	pluginModeState = pluginsBrowseState
+
+	switch command {
+	case "", ":":
+		return
+	case ":out-alias":
+		aliasDocs := pluginsloader.GetTaskAliasDocsSnapshot()
+		if len(aliasDocs) == 0 {
+			pluginModeOutput = append(pluginModeOutput, "当前没有已注册的别名规则")
+			return
+		}
+		for _, aliasDoc := range aliasDocs {
+			pluginModeOutput = append(pluginModeOutput, fmt.Sprintf(
+				"%s => %s (%s)",
+				aliasDoc.Alias,
+				aliasDoc.TaskType,
+				aliasDoc.Desc,
+			))
+		}
+	default:
+		pluginModeOutput = append(pluginModeOutput, "未知命令: "+command)
+	}
 }
 
 // Menu 全屏绘制居中快捷键 Panel
@@ -240,6 +373,8 @@ func listenAndGoto() {
 				renderLogMode()
 			case tuimode.LockMode:
 				lockshow.RenderLockMode()
+			case tuimode.PluginsMode:
+				renderPluginsMode()
 			}
 
 		case termbox.EventResize:
@@ -250,11 +385,18 @@ func listenAndGoto() {
 				renderLogMode()
 			case tuimode.LockMode:
 				lockshow.RenderLockMode()
+			case tuimode.PluginsMode:
+				renderPluginsMode()
 			}
 
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeySpace:
+                                if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+                                        pluginModeCommand += " "
+                                        renderPluginsMode()
+                                        continue
+                                }
 				lockshow.StopLockMode()
 				// 按 SPACE：重新初始化 termbox 以彻底清空屏幕
 				termbox.Close()
@@ -263,7 +405,32 @@ func listenAndGoto() {
 				}
 				tuimode.SetTuiMode(tuimode.MenuMode)
 				Menu()
+			case termbox.KeyEnter:
+				if tuimode.GetTuiMode() == tuimode.PluginsMode {
+					executePluginsModeCommand()
+                                        pluginModeCommand = ""
+					renderPluginsMode()
+				}
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
+				if tuimode.GetTuiMode() == tuimode.PluginsMode && len(pluginModeCommand) > 0 {
+					pluginModeCommand = pluginModeCommand[:len(pluginModeCommand)-1]
+					renderPluginsMode()
+				}
+                        case termbox.KeyEsc:
+                                if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+                                        pluginModeState = pluginsBrowseState
+                                        pluginModeCommand = ""
+                                        renderPluginsMode()
+                                }
 			}
+
+                        if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+                                if ev.Ch != 0 {
+                                        pluginModeCommand += string(ev.Ch)
+                                        renderPluginsMode()
+                                }
+                                continue
+                        }
 
 			switch ev.Ch {
 			case 'n', 'N':
@@ -275,6 +442,17 @@ func listenAndGoto() {
 					return
 				}
 				lockshow.ModLockMode()
+			case 'p', 'P':
+				lockshow.StopLockMode()
+				termbox.Close()
+				if err := termbox.Init(); err != nil {
+					return
+				}
+				tuimode.SetTuiMode(tuimode.PluginsMode)
+				pluginModeCommand = ""
+				pluginModeOutput = pluginModeOutput[:0]
+                                pluginModeState = pluginsBrowseState
+				renderPluginsMode()
 
 			case 'q', 'Q':
 				lockshow.StopLockMode()
@@ -284,6 +462,14 @@ func listenAndGoto() {
 				if config.GetGlobalServiceConfigure().Debug {
 					os.Exit(0)
 				}
+                        case ':':
+                                if tuimode.GetTuiMode() == tuimode.PluginsMode {
+                                        pluginModeState = pluginsCommandInputState
+                                        pluginModeCommand = ":"
+                                        renderPluginsMode()
+                                }
+			default:
+                                continue
 			}
 		}
 	}

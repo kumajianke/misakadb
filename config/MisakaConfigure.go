@@ -25,5 +25,6 @@ type PrivateConfigure struct {
 }
 
 type StorageConfigure struct {
-	Path string `yaml:"path"`
+	Path    string   `yaml:"path"`
+	Plugins []string `yaml:"plugins"`
 }
