@@ -1,5 +1,5 @@
-import { GitContributors } from "/Users/ahs/project-code/misaka_db/.docs/vuepress-starter/node_modules/@vuepress/plugin-git/lib/client/components/GitContributors.js";
-import { GitChangelog } from "/Users/ahs/project-code/misaka_db/.docs/vuepress-starter/node_modules/@vuepress/plugin-git/lib/client/components/GitChangelog.js";
+import { GitContributors } from "G:/project-pipline/misakadb/.docs/vuepress-starter/node_modules/@vuepress/plugin-git/lib/client/components/GitContributors.js";
+import { GitChangelog } from "G:/project-pipline/misakadb/.docs/vuepress-starter/node_modules/@vuepress/plugin-git/lib/client/components/GitChangelog.js";
 
 export default {
   enhance: ({ app }) => {

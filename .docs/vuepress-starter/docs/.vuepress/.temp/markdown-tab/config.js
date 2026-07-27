@@ -1,6 +1,6 @@
-import { CodeTabs } from "/Users/ahs/project-code/misaka_db/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/components/CodeTabs.js";
-import { Tabs } from "/Users/ahs/project-code/misaka_db/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/components/Tabs.js";
-import "/Users/ahs/project-code/misaka_db/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/styles/vars.css";
+import { CodeTabs } from "G:/project-pipline/misakadb/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/components/CodeTabs.js";
+import { Tabs } from "G:/project-pipline/misakadb/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/components/Tabs.js";
+import "G:/project-pipline/misakadb/.docs/vuepress-starter/node_modules/@vuepress/plugin-markdown-tab/lib/client/styles/vars.css";
 
 export default {
   enhance: ({ app }) => {
