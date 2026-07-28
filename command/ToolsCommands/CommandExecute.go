@@ -357,6 +357,7 @@ func printAdminHelp() {
 	fmt.Println("  change-password <username>")
 	fmt.Println("  pul-add <path>")
 	fmt.Println("  pul-remove <plugin-name>")
+	fmt.Println("  pul-list")
 	fmt.Println("  chmod <username> <role>")
 	fmt.Println("  remove <username>")
 	fmt.Println("  remote <username> <flag>")

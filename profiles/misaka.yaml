@@ -11,5 +11,4 @@ service:
 private:
     storage:
         path: ./midatas
-        plugins:
-            - 基础加载模块 @misaka
+        plugins: []
