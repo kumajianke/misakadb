@@ -9,7 +9,7 @@ description: 插件开发规范
 ---
 
 :::tip
-misaka支持天然插件加载和开发，用户可以在 misaka的目录中的 `plugins/mods` 中开发自己的插件，官方默认加载了一个base的插件供以参考，请勿删除base插件，这会导致misaka不可用。
+misaka支持天然插件加载和开发，用户可以在 misaka 开发自己的插件，官方默认加载了一个misaka basic mode的插件供以参考，请勿删除misaka basic mode插件，这会导致misaka不可用。
 :::
 
 
@@ -76,6 +76,22 @@ func Register() error {
 }
 
 ```
+
+### 插件的安装
+安装插件的方式是使用misaka-tools, misaka-tools提供几个插件管理的函数:
+
+|参数|作用|
+|--|--|
+|misaka-tools plu-add [插件的目录]|添加插件到misaka|
+|misaka-tools plu-remove [插件的名称]|删除指定的插件|
+|misaka-tools plu-list|获取所有的插件信息|
+
+:::warning 提示
+- `misaka-tools`卸载或者添加一个插件, 都需要重新编译一次misaka，**这需要用户环境配置misaka所需的Go语言环境**。
+- 默认分发的Misaka都会自动安装一个叫做`misaka basic mode`的插件，这个插件提供了很多基础的功能，所以不建议删除或者覆盖。
+:::
+
+执行完毕之后插件的信息可以通过misaka-tools查看，也可以执行编译好的misaka进行查看，
 
 ### 任务模块
 #### AddTaskType

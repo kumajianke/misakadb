@@ -11,4 +11,5 @@ service:
 private:
     storage:
         path: ./midatas
-        plugins: []
+        plugins:
+            - misaka basic mode @misaka

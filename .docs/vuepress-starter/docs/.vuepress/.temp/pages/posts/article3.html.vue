@@ -1,6 +1,6 @@
 <template><div><div class="hint-container tip">
 <p class="hint-container-title">Tips</p>
-<p>misaka支持天然插件加载和开发，用户可以在 misaka的目录中的 <code v-pre>plugins/mods</code> 中开发自己的插件，官方默认加载了一个base的插件供以参考，请勿删除base插件，这会导致misaka不可用。</p>
+<p>misaka支持天然插件加载和开发，用户可以在 misaka 开发自己的插件，官方默认加载了一个misaka basic mode的插件供以参考，请勿删除misaka basic mode插件，这会导致misaka不可用。</p>
 </div>
 <h2 id="插件开发" tabindex="-1"><a class="header-anchor" href="#插件开发"><span>插件开发</span></a></h2>
 <p>Misaka支持插件的开发和使用。</p>
@@ -62,7 +62,39 @@
 <span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h3 id="任务模块" tabindex="-1"><a class="header-anchor" href="#任务模块"><span>任务模块</span></a></h3>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h3 id="插件的安装" tabindex="-1"><a class="header-anchor" href="#插件的安装"><span>插件的安装</span></a></h3>
+<p>安装插件的方式是使用misaka-tools, misaka-tools提供几个插件管理的函数:</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>misaka-tools plu-add [插件的目录]</td>
+<td>添加插件到misaka</td>
+</tr>
+<tr>
+<td>misaka-tools plu-remove [插件的名称]</td>
+<td>删除指定的插件</td>
+</tr>
+<tr>
+<td>misaka-tools plu-list</td>
+<td>获取所有的插件信息</td>
+</tr>
+</tbody>
+</table>
+<div class="hint-container warning">
+<p class="hint-container-title">提示</p>
+<ul>
+<li><code v-pre>misaka-tools</code>卸载或者添加一个插件, 都需要重新编译一次misaka，<strong>这需要用户环境配置misaka所需的Go语言环境</strong>。</li>
+<li>默认分发的Misaka都会自动安装一个叫做<code v-pre>misaka basic mode</code>的插件，这个插件提供了很多基础的功能，所以不建议删除或者覆盖。</li>
+</ul>
+</div>
+<p>执行完毕之后插件的信息可以通过misaka-tools查看，也可以执行编译好的misaka进行查看，</p>
+<h3 id="任务模块" tabindex="-1"><a class="header-anchor" href="#任务模块"><span>任务模块</span></a></h3>
 <h4 id="addtasktype" tabindex="-1"><a class="header-anchor" href="#addtasktype"><span>AddTaskType</span></a></h4>
 <ul>
 <li>参数: <code v-pre>AddTaskType(allTaskTypelst []tasktype.TaskType) </code></li>
