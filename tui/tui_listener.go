@@ -45,8 +45,8 @@ type logEntry struct {
 type pluginsInputState int
 
 const (
-        pluginsBrowseState pluginsInputState = iota
-        pluginsCommandInputState
+	pluginsBrowseState pluginsInputState = iota
+	pluginsCommandInputState
 )
 
 const maxLogBuffer = 500 // 全局日志缓冲条数
@@ -56,7 +56,7 @@ var (
 	logBufferMu       sync.Mutex
 	pluginModeCommand string
 	pluginModeOutput  []string
-        pluginModeState   = pluginsBrowseState
+	pluginModeState   = pluginsBrowseState
 )
 
 func ansiToTermbox(ansiColor string) termbox.Attribute {
@@ -108,7 +108,7 @@ func renderLogMode() {
 
 	// 分隔线
 	for x := 0; x < w; x++ {
-		termbox.SetCell(x, 1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(x, 1, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	// 渲染日志
@@ -153,7 +153,7 @@ func renderPluginsMode() {
 	tuibase.DrawText(0, 0, termbox.ColorCyan|termbox.AttrBold, termbox.ColorDefault, title)
 
 	for x := 0; x < w; x++ {
-		termbox.SetCell(x, 1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(x, 1, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	configuredPlugins := make([]string, 0)
@@ -167,10 +167,10 @@ func renderPluginsMode() {
 	tuibase.DrawText(halfW, 2, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault, fmt.Sprintf("Loaded Plugins (%d)", len(loadedPlugins)))
 
 	for x := 0; x < w; x++ {
-		termbox.SetCell(x, 3, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(x, 3, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 	for y := 3; y < h; y++ {
-		termbox.SetCell(halfW-2, y, '│', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(halfW-2, y, tuibase.VerticalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	row := 4
@@ -202,15 +202,15 @@ func renderPluginsMode() {
 	commandRow := h - 3
 	if commandRow >= 4 {
 		for x := 0; x < w; x++ {
-			termbox.SetCell(x, commandRow-1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+			termbox.SetCell(x, commandRow-1, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 		}
-                commandHint := "Command"
-                if pluginModeState == pluginsBrowseState {
-                        commandHint = "Command (: enter)"
-                } else {
-                        commandHint = "Command (input)"
-                }
-                tuibase.DrawText(0, commandRow, termbox.ColorYellow|termbox.AttrBold, termbox.ColorDefault, commandHint)
+		commandHint := "Command"
+		if pluginModeState == pluginsBrowseState {
+			commandHint = "Command (: enter)"
+		} else {
+			commandHint = "Command (input)"
+		}
+		tuibase.DrawText(0, commandRow, termbox.ColorYellow|termbox.AttrBold, termbox.ColorDefault, commandHint)
 		tuibase.DrawText(10, commandRow, termbox.ColorWhite, termbox.ColorDefault, pluginModeCommand)
 	}
 
@@ -291,36 +291,36 @@ func Menu() {
 	bg := termbox.ColorDefault
 
 	// ── 顶部边框 ──
-	tuibase.DrawText(startX, startY, colorBorder, bg, "╔")
+	tuibase.DrawText(startX, startY, colorBorder, bg, string(tuibase.BoxTopLeftRune()))
 	for i := 1; i < panelW-1; i++ {
-		tuibase.DrawText(startX+i, startY, colorBorder, bg, "═")
+		tuibase.DrawText(startX+i, startY, colorBorder, bg, string(tuibase.BoxHorizontalRune()))
 	}
-	tuibase.DrawText(startX+panelW-1, startY, colorBorder, bg, "╗")
+	tuibase.DrawText(startX+panelW-1, startY, colorBorder, bg, string(tuibase.BoxTopRightRune()))
 
 	// ── 标题 ──
-	title := "Misaka DB —— 主菜单"
+	title := "Misaka DB —— Main Menu"
 	titleRow := startY + 1
 	titleW := runewidth.StringWidth(title)
 	leftPad := (panelW - 2 - titleW) / 2
 
-	tuibase.DrawText(startX, titleRow, colorBorder, bg, "║")
+	tuibase.DrawText(startX, titleRow, colorBorder, bg, string(tuibase.BoxVerticalRune()))
 	tuibase.FillSpaces(startX+1, startX+1+leftPad, titleRow, colorTitle, bg)
 	afterTitle := tuibase.DrawText(startX+1+leftPad, titleRow, colorTitle, bg, title)
 	tuibase.FillSpaces(afterTitle, startX+panelW-1, titleRow, colorTitle, bg)
-	tuibase.DrawText(startX+panelW-1, titleRow, colorBorder, bg, "║")
+	tuibase.DrawText(startX+panelW-1, titleRow, colorBorder, bg, string(tuibase.BoxVerticalRune()))
 
 	// ── 分隔线 ──
 	sepRow := startY + 2
-	tuibase.DrawText(startX, sepRow, colorBorder, bg, "╠")
+	tuibase.DrawText(startX, sepRow, colorBorder, bg, string(tuibase.BoxLeftDividerRune()))
 	for i := 1; i < panelW-1; i++ {
-		tuibase.DrawText(startX+i, sepRow, colorSep, bg, "─")
+		tuibase.DrawText(startX+i, sepRow, colorSep, bg, string(tuibase.HorizontalLineRune()))
 	}
-	tuibase.DrawText(startX+panelW-1, sepRow, colorBorder, bg, "╣")
+	tuibase.DrawText(startX+panelW-1, sepRow, colorBorder, bg, string(tuibase.BoxRightDividerRune()))
 
 	// ── 快捷键条目 ──
 	for idx, item := range menuItems {
 		row := startY + 3 + idx
-		tuibase.DrawText(startX, row, colorBorder, bg, "║")
+		tuibase.DrawText(startX, row, colorBorder, bg, string(tuibase.BoxVerticalRune()))
 
 		col := startX + 2
 		col = tuibase.DrawText(col, row, colorSep, bg, "[")
@@ -329,16 +329,16 @@ func Menu() {
 		col = tuibase.DrawText(col, row, colorDesc, bg, "  ")
 		afterDesc := tuibase.DrawText(col, row, colorDesc, bg, item.desc)
 		tuibase.FillSpaces(afterDesc, startX+panelW-1, row, colorDesc, bg)
-		tuibase.DrawText(startX+panelW-1, row, colorBorder, bg, "║")
+		tuibase.DrawText(startX+panelW-1, row, colorBorder, bg, string(tuibase.BoxVerticalRune()))
 	}
 
 	// ── 底部边框 ──
 	bottomRow := startY + 3 + len(menuItems)
-	tuibase.DrawText(startX, bottomRow, colorBorder, bg, "╚")
+	tuibase.DrawText(startX, bottomRow, colorBorder, bg, string(tuibase.BoxBottomLeftRune()))
 	for i := 1; i < panelW-1; i++ {
-		tuibase.DrawText(startX+i, bottomRow, colorBorder, bg, "═")
+		tuibase.DrawText(startX+i, bottomRow, colorBorder, bg, string(tuibase.BoxHorizontalRune()))
 	}
-	tuibase.DrawText(startX+panelW-1, bottomRow, colorBorder, bg, "╝")
+	tuibase.DrawText(startX+panelW-1, bottomRow, colorBorder, bg, string(tuibase.BoxBottomRightRune()))
 
 	termbox.Flush()
 }
@@ -392,11 +392,11 @@ func listenAndGoto() {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeySpace:
-                                if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
-                                        pluginModeCommand += " "
-                                        renderPluginsMode()
-                                        continue
-                                }
+				if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+					pluginModeCommand += " "
+					renderPluginsMode()
+					continue
+				}
 				lockshow.StopLockMode()
 				// 按 SPACE：重新初始化 termbox 以彻底清空屏幕
 				termbox.Close()
@@ -408,7 +408,7 @@ func listenAndGoto() {
 			case termbox.KeyEnter:
 				if tuimode.GetTuiMode() == tuimode.PluginsMode {
 					executePluginsModeCommand()
-                                        pluginModeCommand = ""
+					pluginModeCommand = ""
 					renderPluginsMode()
 				}
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
@@ -416,21 +416,21 @@ func listenAndGoto() {
 					pluginModeCommand = pluginModeCommand[:len(pluginModeCommand)-1]
 					renderPluginsMode()
 				}
-                        case termbox.KeyEsc:
-                                if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
-                                        pluginModeState = pluginsBrowseState
-                                        pluginModeCommand = ""
-                                        renderPluginsMode()
-                                }
+			case termbox.KeyEsc:
+				if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+					pluginModeState = pluginsBrowseState
+					pluginModeCommand = ""
+					renderPluginsMode()
+				}
 			}
 
-                        if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
-                                if ev.Ch != 0 {
-                                        pluginModeCommand += string(ev.Ch)
-                                        renderPluginsMode()
-                                }
-                                continue
-                        }
+			if tuimode.GetTuiMode() == tuimode.PluginsMode && pluginModeState == pluginsCommandInputState {
+				if ev.Ch != 0 {
+					pluginModeCommand += string(ev.Ch)
+					renderPluginsMode()
+				}
+				continue
+			}
 
 			switch ev.Ch {
 			case 'n', 'N':
@@ -451,7 +451,7 @@ func listenAndGoto() {
 				tuimode.SetTuiMode(tuimode.PluginsMode)
 				pluginModeCommand = ""
 				pluginModeOutput = pluginModeOutput[:0]
-                                pluginModeState = pluginsBrowseState
+				pluginModeState = pluginsBrowseState
 				renderPluginsMode()
 
 			case 'q', 'Q':
@@ -462,14 +462,14 @@ func listenAndGoto() {
 				if config.GetGlobalServiceConfigure().Debug {
 					os.Exit(0)
 				}
-                        case ':':
-                                if tuimode.GetTuiMode() == tuimode.PluginsMode {
-                                        pluginModeState = pluginsCommandInputState
-                                        pluginModeCommand = ":"
-                                        renderPluginsMode()
-                                }
+			case ':':
+				if tuimode.GetTuiMode() == tuimode.PluginsMode {
+					pluginModeState = pluginsCommandInputState
+					pluginModeCommand = ":"
+					renderPluginsMode()
+				}
 			default:
-                                continue
+				continue
 			}
 		}
 	}

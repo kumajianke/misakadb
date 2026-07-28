@@ -3,8 +3,10 @@ package toolscommands
 import (
 	"fmt"
 	"io/fs"
+	"misakadb/clilog"
 	"misakadb/config"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	"misakadb/shares"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,16 +18,18 @@ import (
 
 const defaultConfigPath = "./profiles/misaka.yaml"
 const defaultBuildScriptPath = "./build.sh"
+const defaultBuildScriptWindowsPath = "./build.bat"
 const defaultBridgeDirPath = "./plugins/pluginbridge"
 const defaultBridgeFilePath = "./plugins/pluginbridge/bridge_gen.go"
 const defaultModulePath = "misakadb"
 
 func installPlugin(pluginDir string) error {
-	manifest, err := pluginsloader.LoadPluginManifest(pluginDir)
+	manifest, err := pluginsloader.LoadPluginManifest(pluginDir) // 获取插件清单
 	if err != nil {
 		return fmt.Errorf("加载插件清单失败: %w", err)
 	}
-	if strings.TrimSpace(manifest.Name) == "" {
+
+	if strings.TrimSpace(manifest.Name) == "" { // 获取插件的名称
 		return fmt.Errorf("插件清单缺少 name: %s", pluginDir)
 	}
 
@@ -71,15 +75,36 @@ func rebuildAfterPluginChange() error {
 		return fmt.Errorf("未检测到 Go 开发环境，请先安装 Go 并确保 `go` 已加入 PATH")
 	}
 
-	cmd := exec.Command("sh", defaultBuildScriptPath)
+	var cmd *exec.Cmd
+	if shares.IsWindows() {
+		scriptPath, err := filepath.Abs(defaultBuildScriptWindowsPath)
+		if err != nil {
+			return fmt.Errorf("解析 Windows 构建脚本路径失败: %w", err)
+		}
+		if _, err := os.Stat(scriptPath); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("Windows 环境缺少构建脚本: %s", scriptPath)
+			}
+			return fmt.Errorf("检查 Windows 构建脚本失败: %w", err)
+		}
+		cmd = exec.Command("cmd", "/c", scriptPath)
+	} else {
+		scriptPath, err := filepath.Abs(defaultBuildScriptPath)
+		if err != nil {
+			return fmt.Errorf("解析构建脚本路径失败: %w", err)
+		}
+		cmd = exec.Command("sh", scriptPath)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 type pluginImportEntry struct {
-	Name       string
-	ImportPath string
+	Name         string
+	ImportPath   string
+	ImportAlias  string
+	BootFunction string
 }
 
 func syncPluginBridge() error {
@@ -93,6 +118,7 @@ func syncPluginBridge() error {
 		return err
 	}
 
+	clilog.Info(fmt.Sprintf("插件列表: %v", imports))
 	return writePluginBridgeFile(imports)
 }
 
@@ -122,9 +148,15 @@ func resolveEnabledPluginImports(repoRoot string, enabledPlugins []string) ([]pl
 			return nil, fmt.Errorf("插件目录必须位于项目根目录内: %s", pluginDir)
 		}
 
+		bootImportPath, bootFunction, err := resolvePluginBootReference(repoRoot, pluginDir, manifest.Boot)
+		if err != nil {
+			return nil, fmt.Errorf("解析插件 %q 的 boot 配置失败: %w", pluginName, err)
+		}
+
 		entry := pluginImportEntry{
-			Name:       pluginName,
-			ImportPath: defaultModulePath + "/" + filepath.ToSlash(relPath),
+			Name:         pluginName,
+			ImportPath:   bootImportPath,
+			BootFunction: bootFunction,
 		}
 
 		if existed, ok := manifestByName[pluginName]; ok && existed.ImportPath != entry.ImportPath {
@@ -151,7 +183,64 @@ func resolveEnabledPluginImports(repoRoot string, enabledPlugins []string) ([]pl
 		return resolvedImports[i].ImportPath < resolvedImports[j].ImportPath
 	})
 
+	for i := range resolvedImports {
+		resolvedImports[i].ImportAlias = fmt.Sprintf("plugin_%d", i)
+	}
+
 	return resolvedImports, nil
+}
+
+func resolvePluginBootReference(repoRoot string, pluginDir string, boot string) (string, string, error) {
+	boot = strings.TrimSpace(boot)
+	if boot == "" {
+		return "", "", fmt.Errorf("boot 不能为空")
+	}
+	if !strings.HasPrefix(boot, "./") {
+		return "", "", fmt.Errorf("boot 必须以 ./ 开头: %s", boot)
+	}
+
+	separator := strings.LastIndex(boot, "/")
+	if separator <= 1 || separator == len(boot)-1 {
+		return "", "", fmt.Errorf("boot 格式必须为 ./path/to/file.go/Func(): %s", boot)
+	}
+
+	fileRef := boot[:separator]
+	functionRef := boot[separator+1:]
+	if !strings.HasSuffix(functionRef, "()") {
+		return "", "", fmt.Errorf("boot 函数必须以 () 结尾: %s", boot)
+	}
+	functionName := strings.TrimSuffix(functionRef, "()")
+	if functionName == "" {
+		return "", "", fmt.Errorf("boot 函数名不能为空: %s", boot)
+	}
+
+	filePath := filepath.Clean(filepath.Join(pluginDir, fileRef))
+	relToPlugin, err := filepath.Rel(pluginDir, filePath)
+	if err != nil {
+		return "", "", fmt.Errorf("计算 boot 相对路径失败: %w", err)
+	}
+	if strings.HasPrefix(relToPlugin, "..") {
+		return "", "", fmt.Errorf("boot 不能跳出插件目录: %s", boot)
+	}
+	if filepath.Ext(filePath) != ".go" {
+		return "", "", fmt.Errorf("boot 必须指向 .go 文件: %s", boot)
+	}
+
+	importDir := filepath.Dir(filePath)
+	relImportDir, err := filepath.Rel(repoRoot, importDir)
+	if err != nil {
+		return "", "", fmt.Errorf("计算 boot 导入路径失败: %w", err)
+	}
+	if strings.HasPrefix(relImportDir, "..") {
+		return "", "", fmt.Errorf("boot 文件必须位于项目根目录内: %s", boot)
+	}
+
+	importPath := defaultModulePath
+	if relImportDir != "." {
+		importPath += "/" + filepath.ToSlash(relImportDir)
+	}
+
+	return importPath, functionName, nil
 }
 
 func discoverPluginDirs(repoRoot string) ([]string, error) {
@@ -196,6 +285,9 @@ func shouldSkipPluginWalkDir(name string) bool {
 	}
 }
 
+/**
+* 生成代码文件，以生成对应插件的运行入口
+ */
 func writePluginBridgeFile(imports []pluginImportEntry) error {
 	if err := os.MkdirAll(defaultBridgeDirPath, 0700); err != nil {
 		return err
@@ -204,16 +296,18 @@ func writePluginBridgeFile(imports []pluginImportEntry) error {
 	var builder strings.Builder
 	builder.WriteString("package pluginbridge\n\n")
 	builder.WriteString("// Code generated by misaka-tools. DO NOT EDIT.\n")
-
-	if len(imports) == 0 {
-		builder.WriteString("\n")
-	} else {
-		builder.WriteString("import (\n")
-		for _, entry := range imports {
-			builder.WriteString(fmt.Sprintf("\t_ %q // %s\n", entry.ImportPath, entry.Name))
-		}
-		builder.WriteString(")\n")
+	builder.WriteString("import (\n")
+	builder.WriteString("\tpluginsloader \"misakadb/plugins/pluginsLoader\"\n")
+	for _, entry := range imports {
+		builder.WriteString(fmt.Sprintf("\t%s %q\n", entry.ImportAlias, entry.ImportPath))
 	}
+	builder.WriteString(")\n\n")
+
+	builder.WriteString("func RegisterBuiltinPlugins() {\n")
+	for _, entry := range imports {
+		builder.WriteString(fmt.Sprintf("\tpluginsloader.RegisterBuiltinPlugin(%q, %s.%s)\n", entry.Name, entry.ImportAlias, entry.BootFunction))
+	}
+	builder.WriteString("}\n")
 
 	return os.WriteFile(defaultBridgeFilePath, []byte(builder.String()), 0600)
 }

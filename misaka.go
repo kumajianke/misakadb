@@ -11,7 +11,7 @@ import (
 	"misakadb/network"
 	"misakadb/network/RegisterCenter"
 	"misakadb/network/core"
-	_ "misakadb/plugins/pluginbridge"
+	"misakadb/plugins/pluginbridge"
 	pluginsloader "misakadb/plugins/pluginsLoader"
 	"misakadb/tui"
 	"net/http"
@@ -36,6 +36,7 @@ func printTitle(cfg *config.MisakaConfigure) {
 func InitPlugins() {
 	// 插件加载
 	clilog.Info("[plugins loading...]")
+	pluginbridge.RegisterBuiltinPlugins()
 	tui.Thread_start()            // 启动TUI线程监听
 	global_lock.StartLockPoolGC() // 启动全局锁池回收期
 	if err := pluginsloader.BootstrapPlugins(); err != nil {

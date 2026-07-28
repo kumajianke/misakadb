@@ -15,12 +15,15 @@ type PluginTaskAlias struct {
 }
 
 type PluginManifest struct {
-        Name     string            `yaml:"name"`
-        Boot     string            `yaml:"boot"`
-        Register string            `yaml:"register"`
-        Aliases  []PluginTaskAlias `yaml:"aliases"`
+	Name     string            `yaml:"name"`
+	Boot     string            `yaml:"boot"`
+	Register string            `yaml:"register"`
+	Aliases  []PluginTaskAlias `yaml:"aliases"`
 }
 
+/*
+* 加载指定插件（通过路径）的清单文件（Manifest）并返回
+ */
 func LoadPluginManifest(pluginDir string) (*PluginManifest, error) {
 	manifestPath := filepath.Join(pluginDir, PluginManifestFileName)
 	data, err := os.ReadFile(manifestPath)

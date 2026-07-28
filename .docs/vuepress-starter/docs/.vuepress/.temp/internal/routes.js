@@ -9,13 +9,13 @@ export const routes = Object.fromEntries([
   ["/404.html", { loader: () => import(/* webpackChunkName: "404.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/404.html.js"), meta: {"title":""} }],
   ["/category/", { loader: () => import(/* webpackChunkName: "category_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/category/index.html.js"), meta: {"title":"Categories"} }],
   ["/category/%E5%86%85%E9%83%A8%E5%AE%9E%E7%8E%B0/", { loader: () => import(/* webpackChunkName: "category_内部实现_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/category/内部实现/index.html.js"), meta: {"title":"Category 内部实现"} }],
+  ["/category/%E6%8F%92%E4%BB%B6/", { loader: () => import(/* webpackChunkName: "category_插件_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/category/插件/index.html.js"), meta: {"title":"Category 插件"} }],
   ["/tag/", { loader: () => import(/* webpackChunkName: "tag_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/tag/index.html.js"), meta: {"title":"Tags"} }],
   ["/tag/%E5%85%A8%E5%B1%80%E9%94%81%E6%B1%A0/", { loader: () => import(/* webpackChunkName: "tag_全局锁池_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/tag/全局锁池/index.html.js"), meta: {"title":"Tag 全局锁池"} }],
   ["/tag/%E5%8E%9F%E5%AD%90%E4%BB%BB%E5%8A%A1/", { loader: () => import(/* webpackChunkName: "tag_原子任务_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/tag/原子任务/index.html.js"), meta: {"title":"Tag 原子任务"} }],
   ["/tag/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/", { loader: () => import(/* webpackChunkName: "tag_插件开发_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/tag/插件开发/index.html.js"), meta: {"title":"Tag 插件开发"} }],
   ["/article/", { loader: () => import(/* webpackChunkName: "article_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/article/index.html.js"), meta: {"title":"Articles"} }],
   ["/timeline/", { loader: () => import(/* webpackChunkName: "timeline_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/timeline/index.html.js"), meta: {"title":"Timeline"} }],
-  ["/category/%E6%8F%92%E4%BB%B6/", { loader: () => import(/* webpackChunkName: "category_插件_index.html" */"G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/category/插件/index.html.js"), meta: {"title":"Category 插件"} }],
 ]);
 
 if (import.meta.webpackHot) {

@@ -31,7 +31,7 @@ func RenderLockMode() {
 	tuibase.DrawText(0, 0, termbox.ColorCyan|termbox.AttrBold, termbox.ColorDefault, title)
 
 	for x := 0; x < w; x++ {
-		termbox.SetCell(x, 1, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(x, 1, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	line := fmt.Sprintf(
@@ -42,7 +42,7 @@ func RenderLockMode() {
 	tuibase.DrawText(0, 2, termbox.ColorWhite, termbox.ColorDefault, line)
 
 	for x := 0; x < w; x++ {
-		termbox.SetCell(x, 3, '─', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(x, 3, tuibase.HorizontalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	halfW := w / 2
@@ -53,7 +53,7 @@ func RenderLockMode() {
 
 	// 中间竖线
 	for y := 4; y < h; y++ {
-		termbox.SetCell(halfW-2, y, '│', termbox.ColorDarkGray, termbox.ColorDefault)
+		termbox.SetCell(halfW-2, y, tuibase.VerticalLineRune(), termbox.ColorDarkGray, termbox.ColorDefault)
 	}
 
 	pools := global_lock.GetGlobalLockPool()

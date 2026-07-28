@@ -14,7 +14,6 @@ const (
 )
 
 func AddTaskType(allTaskTypelst []tasktype.TaskType) ([]tasktype.TaskType, error) {
-
 	allTaskTypelst = append(allTaskTypelst, TaskRemoveFile)
 	allTaskTypelst = append(allTaskTypelst, TaskModFile)
 	allTaskTypelst = append(allTaskTypelst, TaskRemoveFolder)
@@ -24,16 +23,11 @@ func AddTaskType(allTaskTypelst []tasktype.TaskType) ([]tasktype.TaskType, error
 func OnRemoveFile(taskType tasktype.TaskType, params []string) error {
 	// 实现对文件的删除操作
 	return nil
-
 }
 
 func RollRemoveFile(taskType tasktype.TaskType, params []string) error {
 	// 回滚删除操作
 	return nil
-}
-
-func init() {
-	pluginsloader.RegisterBuiltinPlugin(modName, Register)
 }
 
 func Register() error {

@@ -16,6 +16,10 @@ var (
 	globalConfigureOnce sync.Once
 )
 
+/*
+*
+通过路径加载指定的Misaka配置
+*/
 func LoadMisakaConfigure(path string) (*MisakaConfigure, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -58,6 +62,10 @@ func InitGlobalMisakaConfigure(path string) (*MisakaConfigure, error) {
 	return globalConfigure, globalConfigureErr
 }
 
+/*
+*
+获取全局的Misaka数据库配置
+*/
 func GetGlobalMisakaConfigure() *MisakaConfigure {
 	return globalConfigure
 }
