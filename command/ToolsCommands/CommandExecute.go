@@ -175,6 +175,20 @@ func CommandExecute(command_all []string) {
 			os.Exit(0)
 		}
 		clilog.Success("插件安装成功，已写入 profiles/misaka.yaml 并完成重新编译")
+
+	case "plu-list":
+		clilog.Success("尝试获取插件所有的信息...")
+		plu, err := listAllPlugins()
+		if err != nil {
+			clilog.Error(err)
+			os.Exit(0)
+		}
+
+		clilog.Info("ID\tName")
+		for index, item := range plu {
+			clilog.Info(fmt.Sprintf("%d\t%s", index, item))
+		}
+
 	case "plu-remove":
 		if len(command_all) != 2 {
 			clilog.Error("错误用法，正确用法misaka-tools plu-remove 插件名")

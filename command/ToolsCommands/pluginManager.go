@@ -66,6 +66,15 @@ func uninstallPlugin(pluginName string) error {
 	return saveMisakaConfigure(defaultConfigPath, cfg)
 }
 
+func listAllPlugins() ([]string, error) {
+	cfg, err := config.LoadMisakaConfigure(defaultConfigPath)
+	if err != nil {
+		return nil, err
+	}
+	installed := cfg.Private.Storage.Plugins // 获取安装的所有插件
+	return installed, nil
+}
+
 func rebuildAfterPluginChange() error {
 	if err := syncPluginBridge(); err != nil {
 		return fmt.Errorf("同步插件桥接文件失败: %w", err)

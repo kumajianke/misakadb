@@ -1,2 +1,2 @@
-name: "基础加载模块 @misaka"
+name: "misaka basic mode @misaka"
 boot: "./tasks.go/Register()"
