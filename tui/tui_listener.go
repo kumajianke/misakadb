@@ -5,6 +5,7 @@ import (
 	"misakadb/clilog"
 	"misakadb/config"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	pluginsX "misakadb/plugins/pluginsx"
 	lockshow "misakadb/tui/lock-show"
 	tuibase "misakadb/tui/tui-base"
 	tuimode "misakadb/tui/tui-mode"
@@ -241,7 +242,7 @@ func executePluginsModeCommand() {
 	case "", ":":
 		return
 	case ":out-alias":
-		aliasDocs := pluginsloader.GetTaskAliasDocsSnapshot()
+		aliasDocs := pluginsX.GetPluginsBus().GetTaskAliasDocsSnapshot()
 		if len(aliasDocs) == 0 {
 			pluginModeOutput = append(pluginModeOutput, "当前没有已注册的别名规则")
 			return

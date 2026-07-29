@@ -4,10 +4,6 @@
 </div>
 <h2 id="插件开发" tabindex="-1"><a class="header-anchor" href="#插件开发"><span>插件开发</span></a></h2>
 <p>Misaka支持插件的开发和使用。</p>
-<div class="hint-container warning">
-<p class="hint-container-title">Warning</p>
-<p>以下设计尚在WIP中。</p>
-</div>
 <p><strong>模组原理</strong>：开发者创建函数，然后按照指定的type约束传入注册机，如：<code v-pre>func ([]tasktype.TaskType) []tasktype.TaskType</code>, 注册机会根据类型在程序启动之后，在相应的地方调用函数。</p>
 <h3 id="快捷启动" tabindex="-1"><a class="header-anchor" href="#快捷启动"><span>快捷启动</span></a></h3>
 <p>我们在源代码中创建自己的包并编写代码，开发者可以参考Misaka官方编写的<code v-pre>base_unloaded</code>插件。开发者需要创建一个<code v-pre>plugin.yaml</code>配置文件来配置我们的插件信息，参考代码如下：</p>
@@ -26,18 +22,14 @@
 <span class="line"><span class="token punctuation">)</span></span>
 <span class="line"></span>
 <span class="line"><span class="token keyword">const</span> <span class="token punctuation">(</span></span>
+<span class="line">	TaskRemoveFile   tasktype<span class="token punctuation">.</span>TaskType <span class="token operator">=</span> <span class="token string">"remove_file"</span></span>
+<span class="line">	TaskModFile      tasktype<span class="token punctuation">.</span>TaskType <span class="token operator">=</span> <span class="token string">"mod_file"</span></span>
 <span class="line">	TaskRemoveFolder tasktype<span class="token punctuation">.</span>TaskType <span class="token operator">=</span> <span class="token string">"remove_folder"</span></span>
 <span class="line"><span class="token punctuation">)</span></span>
-<span class="line"></span>
-<span class="line"><span class="token keyword">func</span> <span class="token function">AddTaskType</span><span class="token punctuation">(</span>allTaskTypelst <span class="token punctuation">[</span><span class="token punctuation">]</span>tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span>tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span></span>
-<span class="line">	allTaskTypelst <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>allTaskTypelst<span class="token punctuation">,</span> TaskRemoveFolder<span class="token punctuation">)</span></span>
-<span class="line">	<span class="token keyword">return</span> allTaskTypelst<span class="token punctuation">,</span> <span class="token boolean">nil</span></span>
-<span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
 <span class="line"><span class="token keyword">func</span> <span class="token function">OnRemoveFile</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
 <span class="line">	<span class="token comment">// 实现对文件的删除操作</span></span>
 <span class="line">	<span class="token keyword">return</span> <span class="token boolean">nil</span></span>
-<span class="line"></span>
 <span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
 <span class="line"><span class="token keyword">func</span> <span class="token function">RollRemoveFile</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
@@ -45,24 +37,45 @@
 <span class="line">	<span class="token keyword">return</span> <span class="token boolean">nil</span></span>
 <span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
-<span class="line"><span class="token keyword">func</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span></span>
-<span class="line">	pluginsloader<span class="token punctuation">.</span><span class="token function">RegisterBuiltinPlugin</span><span class="token punctuation">(</span>modName<span class="token punctuation">,</span> Register<span class="token punctuation">)</span></span>
+<span class="line"><span class="token comment">/*</span>
+<span class="line">添加TaskType</span>
+<span class="line">*/</span></span>
+<span class="line"><span class="token keyword">func</span> <span class="token function">AddTaskType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
+<span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> pluginsloader<span class="token punctuation">.</span><span class="token function">RegisterPluginTaskTypeWithAlias</span><span class="token punctuation">(</span>modName<span class="token punctuation">,</span> <span class="token string">"misaka.removefile@用于删除文件的tasktype"</span><span class="token punctuation">,</span> TaskRemoveFile<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
+<span class="line">		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"register alias %s failed: %w"</span><span class="token punctuation">,</span> <span class="token string">"misaka.removefile"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span></span>
+<span class="line">	<span class="token punctuation">}</span></span>
+<span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> pluginsloader<span class="token punctuation">.</span><span class="token function">RegisterPluginTaskTypeWithAlias</span><span class="token punctuation">(</span>modName<span class="token punctuation">,</span> <span class="token string">"misaka.removefolder@用于删目录的tasktype"</span><span class="token punctuation">,</span> TaskRemoveFolder<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
+<span class="line">		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"register alias %s failed: %w"</span><span class="token punctuation">,</span> <span class="token string">"misaka.removefolder"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span></span>
+<span class="line">	<span class="token punctuation">}</span></span>
+<span class="line">	<span class="token keyword">return</span> <span class="token boolean">nil</span></span>
 <span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
-<span class="line"><span class="token keyword">func</span> <span class="token function">Register</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
-<span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> pluginsloader<span class="token punctuation">.</span><span class="token function">RegisterPluginsActionsInTaskType</span><span class="token punctuation">(</span>modName<span class="token punctuation">,</span> AddTaskType<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
-<span class="line">		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"register task types failed: %w"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span></span>
-<span class="line">	<span class="token punctuation">}</span></span>
-<span class="line"></span>
+<span class="line"><span class="token comment">/*</span>
+<span class="line">添加TaskTypeAction</span>
+<span class="line">*/</span></span>
+<span class="line"><span class="token keyword">func</span> <span class="token function">AddTaskTypeAction</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
 <span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> pluginsloader<span class="token punctuation">.</span><span class="token function">RegisterPluginsActionsInTaskTypeAction</span><span class="token punctuation">(</span>modName<span class="token punctuation">,</span> TaskRemoveFile<span class="token punctuation">,</span> OnRemoveFile<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
 <span class="line">		<span class="token keyword">return</span> fmt<span class="token punctuation">.</span><span class="token function">Errorf</span><span class="token punctuation">(</span><span class="token string">"register task action failed: %w"</span><span class="token punctuation">,</span> err<span class="token punctuation">)</span></span>
 <span class="line">	<span class="token punctuation">}</span></span>
+<span class="line">	<span class="token keyword">return</span> <span class="token boolean">nil</span></span>
+<span class="line"><span class="token punctuation">}</span></span>
+<span class="line"></span>
+<span class="line"><span class="token keyword">func</span> <span class="token function">Register</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span></span>
+<span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">AddTaskType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
+<span class="line">		<span class="token keyword">return</span> err</span>
+<span class="line">	<span class="token punctuation">}</span></span>
+<span class="line"></span>
+<span class="line">	<span class="token keyword">if</span> err <span class="token operator">:=</span> <span class="token function">AddTaskTypeAction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span></span>
+<span class="line">		<span class="token keyword">return</span> err</span>
+<span class="line">	<span class="token punctuation">}</span></span>
+<span class="line"></span>
 <span class="line">	clilog<span class="token punctuation">.</span><span class="token function">Success</span><span class="token punctuation">(</span><span class="token string">"基础插件加载完毕."</span><span class="token punctuation">)</span></span>
 <span class="line">	<span class="token keyword">return</span> <span class="token boolean">nil</span></span>
 <span class="line"><span class="token punctuation">}</span></span>
 <span class="line"></span>
+<span class="line"></span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h3 id="插件的安装" tabindex="-1"><a class="header-anchor" href="#插件的安装"><span>插件的安装</span></a></h3>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h3 id="插件的安装" tabindex="-1"><a class="header-anchor" href="#插件的安装"><span>插件的安装</span></a></h3>
 <p>安装插件的方式是使用misaka-tools, misaka-tools提供几个插件管理的函数:</p>
 <table>
 <thead>
@@ -93,18 +106,32 @@
 <li>默认分发的Misaka都会自动安装一个叫做<code v-pre>misaka basic mode</code>的插件，这个插件提供了很多基础的功能，所以不建议删除或者覆盖。</li>
 </ul>
 </div>
-<p>执行完毕之后插件的信息可以通过misaka-tools查看，也可以执行编译好的misaka进行查看，</p>
-<h3 id="任务模块" tabindex="-1"><a class="header-anchor" href="#任务模块"><span>任务模块</span></a></h3>
-<h4 id="addtasktype" tabindex="-1"><a class="header-anchor" href="#addtasktype"><span>AddTaskType</span></a></h4>
+<p>执行完毕之后插件的信息可以通过misaka-tools查看，也可以执行编译好的misaka进行查看，在<code v-pre>Debug</code>模式下打开Misaka，按住键盘<code v-pre>p</code>键查看添加的和加载的插件信息。</p>
+<h3 id="常见插件函数" tabindex="-1"><a class="header-anchor" href="#常见插件函数"><span>常见插件函数</span></a></h3>
+<blockquote>
+<p><code v-pre>TaskType</code>和<code v-pre>TaskTypeAction</code>是原子任务中心的一个概念，<RouteLink to="/posts/article2.html">点击跳转</RouteLink>。</p>
+</blockquote>
+<h4 id="插件追加-tasktype" tabindex="-1"><a class="header-anchor" href="#插件追加-tasktype"><span>插件追加 <code v-pre>TaskType</code></span></a></h4>
 <ul>
-<li>参数: <code v-pre>AddTaskType(allTaskTypelst []tasktype.TaskType) </code></li>
-<li>返回值： <code v-pre>[]tasktype.TaskType</code></li>
-<li>作用： 添加原子任务类型</li>
+<li><strong>函数</strong>：<code v-pre>RegisterPluginTaskTypeWithAlias()</code></li>
+<li><strong>参数</strong>：<code v-pre>(plugin string, alias string, taskType tasktype.TaskType)</code></li>
+<li><strong>作用</strong>：传入插件名称、TaskType别名、taskType对象以注册TaskType到pluginsx。</li>
+</ul>
+<h4 id="插件追加-tasktypeaction" tabindex="-1"><a class="header-anchor" href="#插件追加-tasktypeaction"><span>插件追加 <code v-pre>TaskTypeAction</code></span></a></h4>
+<ul>
+<li><strong>函数</strong>：<code v-pre>RegisterPluginsActionsInTaskTypeAction()</code></li>
+<li><strong>参数</strong>：<code v-pre>(plugins string, taskType tasktype.TaskType, action pluginsxInterface.FuncTaskTypeAction)</code></li>
 </ul>
 <blockquote>
-<p>原子任务类型: 原子任务中心会根据原子任务类型来调用对应的函数。</p>
-</blockquote>
-<h3 id="" tabindex="-1"><a class="header-anchor" href="#"><span></span></a></h3>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">type</span> FuncTaskTypeAction <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div></blockquote>
+<ul>
+<li><strong>作用</strong>：传入插件名称、TaskType别名、taskType对象以注册TaskType到pluginsx。</li>
+</ul>
+<h3 id="常见插件术语" tabindex="-1"><a class="header-anchor" href="#常见插件术语"><span>常见插件术语</span></a></h3>
+<h4 id="pluginsx" tabindex="-1"><a class="header-anchor" href="#pluginsx"><span>pluginsx</span></a></h4>
+<p><code v-pre>pluginsx</code> 是 <code v-pre>Misaka</code> 用于管理插件上下的包，插件注册的所有内容都放在了 <code v-pre>pluginsx.PluginsBus{}</code> 对象上。其中PluginsBus是单例存在的，使用函数 <code v-pre>GetPluginsBus</code> 获取唯一引用。</p>
 </div></template>
 
 

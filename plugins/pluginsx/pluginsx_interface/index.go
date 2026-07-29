@@ -1,4 +1,4 @@
-package pluginxInterface
+package pluginsxInterface
 
 import tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 

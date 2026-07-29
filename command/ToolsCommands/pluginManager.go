@@ -319,10 +319,9 @@ func writePluginBridgeFile(imports []pluginImportEntry) error {
 		builder.WriteString(fmt.Sprintf("\t%s %q\n", entry.ImportAlias, entry.ImportPath))
 	}
 	builder.WriteString(")\n\n")
-
 	builder.WriteString("func RegisterBuiltinPlugins() {\n")
+	builder.WriteString("\tclilog.Info(\"Load The All Plugins...\")\n")
 
-	builder.WriteString("clilog.Info(\"Load The All Plugins...\")\n")
 	for _, entry := range imports {
 		builder.WriteString(fmt.Sprintf("\tpluginsloader.RegisterBuiltinPlugin(%q, %s.%s)\n", entry.Name, entry.ImportAlias, entry.BootFunction))
 	}
