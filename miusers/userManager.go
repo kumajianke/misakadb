@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	atomic_file_handler "misakadb/atomic/atomicFileHandler"
 	"misakadb/shares/safe"
 	"os"
 	"strings"
@@ -40,7 +41,7 @@ func (u *UserManager) InitUser() (string, error) {
 		return "", err
 	}
 
-	err = os.WriteFile(UserFile, empty, 0600)
+	err = atomic_file_handler.AtomicSyncWriteFile(UserFile, empty, 0600)
 	if err != nil {
 		return "", errors.New("无法写入用户文件，请检查 profiles 目录权限")
 	}
@@ -64,7 +65,7 @@ func (u *UserManager) SaveUserFile(userMap map[string]UserJSON) error {
 		return err
 	}
 
-	err = os.WriteFile(UserFile, cipherData, 0600)
+	err = atomic_file_handler.AtomicSyncWriteFile(UserFile, cipherData, 0600)
 	if err != nil {
 		return errors.New("无法写入用户文件，请检查 profiles 目录权限")
 	}

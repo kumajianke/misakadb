@@ -61,10 +61,10 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 	// ============ Command
 	dispatchValue := reflect.ValueOf(dispatch).Elem()
 	dispatchType := dispatchValue.Type()
-
 	command_lst := strings.Split(command, " ")
 	main_command := command_lst[0]
 	var arg_command []string
+
 	if len(command_lst) > 1 {
 		arg_command = command_lst[1:]
 	} else {
@@ -74,7 +74,6 @@ func (dispatch *MiqlCommDispatch) Dispatch(
 	for i := 0; i < dispatchType.NumField(); i++ {
 		field := dispatchType.Field(i)
 		if field.Tag.Get("mapper") == main_command {
-
 			context := dispatchValue.Field(i).Interface().(func(*context.ServiceConnContext, []string) error)
 			return context(serviceContext, arg_command)
 		}

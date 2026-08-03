@@ -6,9 +6,9 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	atomic_file_handler "misakadb/atomic/atomicFileHandler"
 	"misakadb/clilog"
 	"misakadb/network/RegisterCenter"
-	"os"
 )
 
 // EncryptAES 军工级加密：把明文(JSON字节)变成密文乱码
@@ -79,7 +79,7 @@ func InitPassword() {
 		panic("error!")
 	}
 
-	err := os.WriteFile("./profiles/master.mikey", newPassword, 0400)
+	err := atomic_file_handler.AtomicSyncWriteFile("./profiles/master.mikey", newPassword, 0400)
 	if err != nil {
 		clilog.Error("无法写入文件，请检查根目录中是否存在profiles文件夹。")
 		panic("error!")

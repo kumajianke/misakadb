@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	atomic_file_handler "misakadb/atomic/atomicFileHandler"
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_base "misakadb/engine/base"
@@ -94,7 +95,7 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 		clilog.Error("[err]InitLoader error: JsonData error")
 		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
-	err = os.WriteFile(fileName, []byte(jsonData), 0600)
+	err = atomic_file_handler.AtomicSyncWriteFile(fileName, []byte(jsonData), 0600)
 	if err != nil {
 		clilog.Error("[err]InitLoader error: JsonData error")
 		return errors.New("InitLoader error: JsonData error: " + err.Error())

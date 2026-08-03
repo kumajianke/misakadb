@@ -3,6 +3,7 @@ package dblist
 import (
 	"encoding/json"
 	"errors"
+	atomic_file_handler "misakadb/atomic/atomicFileHandler"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
 	"os"
@@ -64,7 +65,7 @@ func StoreDB(dbname string, dbengine string) error {
 		return err
 	}
 
-	err = os.WriteFile(filePath, newData, 0644)
+	err = atomic_file_handler.AtomicSyncWriteFile(filePath, newData, 0644)
 	if err != nil {
 		return err
 	}
@@ -116,7 +117,7 @@ func DropDB(name string) error {
 		return err
 	}
 
-	err = os.WriteFile(filePath, newData, 0644)
+	err = atomic_file_handler.AtomicSyncWriteFile(filePath, newData, 0644)
 	if err != nil {
 		return err
 	}

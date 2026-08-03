@@ -1,10 +1,15 @@
 package base_unloader
 
 import (
+	"errors"
 	"fmt"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
+	"misakadb/lock/global_lock"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	filesafe "misakadb/shares/filesafe"
+	"os"
+	"path/filepath"
 )
 
 const (
@@ -13,9 +18,32 @@ const (
 	TaskRemoveFolder tasktype.TaskType = "remove_folder"
 )
 
+/*
+DESCRIPTION
+
+	实现对文件的删除操作
+
+Params 0 对应文件的路径
+*/
 func OnRemoveFile(taskType tasktype.TaskType, params []string) error {
-	// 实现对文件的删除操作
-	return nil
+	if len(params) != 1 {
+		return errors.New("Argument error: you can research onRemoveFile on code project to get params comments!")
+	}
+
+	handle_file_path := params[0]
+	only_path := filepath.Dir(handle_file_path)  // 路径
+	only_name := filepath.Base(handle_file_path) // 名称
+	unlocked, err := global_lock.LockFileHandle(handle_file_path)
+	if err != nil {
+		return err
+	}
+	defer unlocked()
+
+	remove_state := os.Rename(handle_file_path, filepath.Join(only_path, "MisakaRemove."+only_name)) // 尝试修改
+	if remove_state != nil {
+		return remove_state
+	}
+	return filesafe.Fsync(only_path) // 强制落盘
 }
 
 func RollRemoveFile(taskType tasktype.TaskType, params []string) error {

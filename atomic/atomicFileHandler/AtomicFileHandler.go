@@ -57,24 +57,8 @@ func parseChunkID(chunkFileName string) (int, error) {
 	return id, nil
 }
 
-// 获取分片读锁的key
-func getChunkReadLockKey(filename string) string {
-	absPath, err := filepath.Abs(filename)
-	if err != nil {
-		return filepath.Clean(filename)
-	}
-	return absPath
-}
-
-// 获取分片读锁
-func lockChunkRead(filename string) (func(), error) {
-	lockKey := getChunkReadLockKey(filename)
-	_, unlock, err := global_lock.GetOrStoreGlobalLock("chunk-read:"+lockKey, "lock")
-	return unlock, err
-}
-
-// 强制写入并同步文件
-func AtomicSyncWriteFile(filename string, content []byte, perm os.FileMode) error {
+// 强制写入并同步文件，不负责加锁。
+func atomicSyncWriteFileUnlocked(filename string, content []byte, perm os.FileMode) error {
 	tempFile, err := os.CreateTemp(filepath.Dir(filename), ".tmp-*")
 	// 创建一个临时文件
 	if err != nil {
@@ -106,15 +90,32 @@ func AtomicSyncWriteFile(filename string, content []byte, perm os.FileMode) erro
 	return syncDir(dir)
 }
 
+// 强制写入并同步文件。
+func AtomicSyncWriteFile(filename string, content []byte, perm os.FileMode) error {
+	unlock, err := global_lock.LockFileHandle(filename)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	return atomicSyncWriteFileUnlocked(filename, content, perm)
+}
+
 // 分片存储文件，返回分片数量
 func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode) (int, error) {
+	unlock, err := global_lock.LockFileHandle(filename)
+	if err != nil {
+		return 0, err
+	}
+	defer unlock()
+
 	if len(content) == 0 {
 		return 0, nil
 	}
 
 	// 小于阈值直接写入
 	if len(content) < ChunkSizeThreshold {
-		err := AtomicSyncWriteFile(filename, content, perm)
+		err := atomicSyncWriteFileUnlocked(filename, content, perm)
 		return 0, err
 	}
 
@@ -142,7 +143,7 @@ func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode)
 		}
 
 		chunkFilename := filepath.Join(workDir, fmt.Sprintf("%d.tmp", i))
-		if err := AtomicSyncWriteFile(chunkFilename, content[start:end], perm); err != nil {
+		if err := atomicSyncWriteFileUnlocked(chunkFilename, content[start:end], perm); err != nil {
 			return 0, err
 		}
 	}
@@ -190,8 +191,8 @@ func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode)
 	return totalChunks, nil
 }
 
-// 先尝试合并分片，若已是单文件则直接读取
-func ChunkMergeFile(filename string, perm os.FileMode) error {
+// 先尝试合并分片，若已是单文件则直接读取。不负责加锁。
+func chunkMergeFileUnlocked(filename string, perm os.FileMode) error {
 	chunkDir := getChunkDir(filename)
 	if _, err := os.Stat(chunkDir); err != nil {
 		if os.IsNotExist(err) {
@@ -328,15 +329,26 @@ func ChunkMergeFile(filename string, perm os.FileMode) error {
 	return os.RemoveAll(chunkDir)
 }
 
+// 先尝试合并分片，若已是单文件则直接读取。
+func ChunkMergeFile(filename string, perm os.FileMode) error {
+	unlock, err := global_lock.LockFileHandle(filename)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	return chunkMergeFileUnlocked(filename, perm)
+}
+
 // 读取分片文件内容
 func ChunkRead(filename string) ([]byte, error) {
-	unlock, err := lockChunkRead(filename)
+	unlock, err := global_lock.LockFileHandle(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer unlock()
 
-	if err := ChunkMergeFile(filename, 0700); err != nil {
+	if err := chunkMergeFileUnlocked(filename, 0700); err != nil {
 		return nil, err
 	}
 
