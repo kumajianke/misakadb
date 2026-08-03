@@ -106,3 +106,13 @@ func StartLockPoolGC() {
 }
 
 ```
+
+### V0.17新增
+支持：global_lock.LockFileHandle 获取文件的锁，统一方便封装。
+```go
+	unlock, err := global_lock.LockFileHandle(filename)
+	if err != nil {
+		return 0, err
+	}
+	defer unlock()
+```
