@@ -21,7 +21,7 @@ const (
 /*
 DESCRIPTION
 
-	实现对文件的删除操作
+	实现对文件的删除操作 用于TaskType事件
 
 Params 0 对应文件的路径
 */
@@ -46,9 +46,33 @@ func OnRemoveFile(taskType tasktype.TaskType, params []string) error {
 	return filesafe.Fsync(only_path) // 强制落盘
 }
 
+/*
+DESCRIPTION
+
+	TaskType的删除文件的回滚操作
+
+Params 0 对应的文件路径（不需要MisakaRemove.前缀)
+*/
 func RollRemoveFile(taskType tasktype.TaskType, params []string) error {
 	// 回滚删除操作
-	return nil
+	handle_file_path := params[0]
+	only_path := filepath.Dir(handle_file_path)
+	only_name := filepath.Base(handle_file_path)
+	remove_name := "MisakaRemove." + only_name
+
+	remove_path := filepath.Join(only_path, remove_name)
+	unlocked, err := global_lock.LockFileHandle(remove_path)
+	if err != nil {
+		return err
+	}
+	defer unlocked()
+	undo_state := os.Rename(remove_path, handle_file_path)
+
+	if undo_state != nil {
+		return undo_state
+	}
+
+	return filesafe.Fsync(only_path)
 }
 
 /*
