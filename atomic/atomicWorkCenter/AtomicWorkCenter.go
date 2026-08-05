@@ -87,13 +87,13 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 		// 状态为等待状态修改为Running
 		task.TaskStatus = Running
 	} else if task.TaskStatus == BackRoll {
-		// TODO 回滚机制
+		// TODO: 回滚机制
 	} else if task.TaskStatus == Success {
 
 	}
 
 	if task.TaskStatus == Running {
-		// TODO 运行下一个函数
+		// TODO: 运行下一个函数
 	}
 	var eb *eventbus.AtomicWorkEventBus
 	eb = eventbus.NewAtomicWorkCenterEventBus()
@@ -105,7 +105,7 @@ func (this *AtomicWorkCenter) RemoveTask(taskId string) *Task {
 	return task
 }
 
-// TODO 完成所有的任务的作业本 直到完成
+// TODO: 完成所有的任务的作业本 直到完成
 func (this *AtomicWorkCenter) DoSustain(taskId string) error {
 	task := this.GetTask(taskId)
 

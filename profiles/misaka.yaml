@@ -5,7 +5,7 @@ network:
     retry_count: 3
     retry_delay: 30
 service:
-    version: 0.1.6
+    version: 0.1.7
     hide_info: false
     debug: true
 private:
