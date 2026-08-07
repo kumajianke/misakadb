@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	pluginsXInterface "misakadb/plugins/pluginsx/pluginsx_interface"
+
 	"github.com/puzpuzpuz/xsync/v3"
 )
 
@@ -15,11 +17,11 @@ var (
 )
 
 type PluginsBus struct {
-	TaskTypes       []tasktype.TaskType                    // misaka所加载的任务类型
-	TaskTypeAlias   xsync.MapOf[string, tasktype.TaskType] // 任务别名到 TaskType 的映射
-	TaskTypeActions xsync.MapOf[tasktype.TaskType, any]    // 不同对应的任务类型的操作句柄
-	TaskTypeRoll    xsync.MapOf[tasktype.TaskType, any]    // 不同对应的任务类型的回滚句柄
-	TaskAliasDocs   xsync.MapOf[string, TaskAliasDoc]      // 别名说明文档
+	TaskTypes       []tasktype.TaskType                                                  // misaka所加载的任务类型
+	TaskTypeAlias   xsync.MapOf[string, tasktype.TaskType]                               // 任务别名到 TaskType 的映射
+	TaskTypeActions xsync.MapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeAction] // 不同对应的任务类型的操作句柄
+	TaskTypeRoll    xsync.MapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeRoll]   // 不同对应的任务类型的回滚句柄
+	TaskAliasDocs   xsync.MapOf[string, TaskAliasDoc]                                    // 别名说明文档
 }
 
 type TaskAliasDoc struct {
@@ -34,8 +36,8 @@ func GetPluginsBus() *PluginsBus {
 		pluginsX = PluginsBus{
 			TaskTypes:       make([]tasktype.TaskType, 0),
 			TaskTypeAlias:   *xsync.NewMapOf[string, tasktype.TaskType](),
-			TaskTypeActions: *xsync.NewMapOf[tasktype.TaskType, any](),
-			TaskTypeRoll:    *xsync.NewMapOf[tasktype.TaskType, any](),
+			TaskTypeActions: *xsync.NewMapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeAction](),
+			TaskTypeRoll:    *xsync.NewMapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeRoll](),
 			TaskAliasDocs:   *xsync.NewMapOf[string, TaskAliasDoc](),
 		}
 	})

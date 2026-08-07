@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"math/rand"
 	eventbus "misakadb/atomic/EventBus"
+	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
+	"misakadb/plugins/pluginsx"
 	"strconv"
 	"time"
 
@@ -96,6 +98,26 @@ func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 	return nil
 }
 
+/*
+DESCRIPTION
+
+	获取当前Task的Index指向的TaskBook
+
+PARAMS
+
+	0 taskID  任务的ID 通过AddTask获取加密的ID
+*/
+func (this *AtomicWorkCenter) GetCurrentTaskBookRef(taskId string) (*tasktype.TaskBooks, error) {
+	task := this.GetTask(taskId) // 获取任务信息
+	index := task.TaskCurrentIndex
+	if task.TaskCurrentIndex > (len(task.TaskBooks) - 1) {
+		return tasktype.NewTaskBooks("invalid TaskBooks"), errors.New("Index range out the length of TaskBook")
+	}
+	current_task := task.TaskBooks[index]
+	return current_task, nil
+
+}
+
 // 让作业继续下一步
 func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	task := this.GetTask(taskId)
@@ -116,7 +138,7 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 		task.TaskStatus = Running
 	} else if task.TaskStatus == BackRoll {
 		// TODO: 回滚机制
-
+		this.CancleTask(taskId) // 取消代码
 	} else if task.TaskStatus == Success {
 		// 已完成的任务本
 
@@ -125,6 +147,27 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	if task.TaskStatus == Running {
 		// TODO: 运行下一个函数
 
+		pluginx_bus := pluginsx.GetPluginsBus()
+		taskbooks, err := this.GetCurrentTaskBookRef(taskId)
+		taskbooks_tasktype := taskbooks.TaskType
+		if err != nil {
+			return err
+		}
+
+		// TaskBooks 存储了tasktype的别名 通过别名获取对应的tasktype
+		tasktype, ok := pluginx_bus.TaskTypeAlias.Load(string(taskbooks_tasktype)) // 获取TaskType对应的真实TaskType
+		if !ok {
+			return errors.New("can not get the tasktype from pluginx by tasktype of taskbooks.")
+		}
+
+		// 通过tasktype在插件中获取对应的tasktype的执行方案(tasktype actions)
+		actions_fn, actions_ok := pluginx_bus.TaskTypeActions.Load(tasktype)
+		if !actions_ok {
+			return errors.New("can not to load the actions of tasktype which named " + string(tasktype))
+		}
+
+		// 执行 tasktype actions
+		actions_fn(tasktype, taskbooks.Params)
 	}
 	var eb *eventbus.AtomicWorkEventBus
 	eb = eventbus.NewAtomicWorkCenterEventBus()
