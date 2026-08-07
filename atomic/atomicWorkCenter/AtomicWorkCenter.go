@@ -102,14 +102,12 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	fmt.Println(task)
 
 	if task == nil {
-		clilog.Error("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
-		return errors.New("error!")
+		return errors.New("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
 	}
 
 	// 长度验证
 	if task.TaskCurrentIndex+1 >= len(task.TaskBooks) {
-		clilog.Error("[AtomicWorkCenter] Index Error!")
-		return errors.New("error!")
+		return errors.New("[AtomicWorkCenter] Index Error!")
 	}
 
 	// 作业状态信息验证
@@ -193,7 +191,8 @@ func (this *AtomicWorkCenter) DoSustain(taskId string) (error, bool) {
 	for task.TaskCurrentIndex < len(task.TaskBooks) {
 		err := this.DoNext(taskId) // 执行当前任务的下一个作业
 		if err != nil {
-			//  TODO: DONEXT的错误处理
+			clilog.Error(err)
+			this.CancleTask(taskId) // 回滚任务
 		}
 		task.TaskCurrentIndex++                      // 索引增加以便执行下一个作业
 		eb := eventbus.NewAtomicWorkCenterEventBus() // 创建新的事件总线
