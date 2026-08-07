@@ -3,6 +3,7 @@ package atomic_work_center
 import (
 	"crypto/md5"
 	"errors"
+	"fmt"
 	"math/rand"
 	eventbus "misakadb/atomic/EventBus"
 	"misakadb/clilog"
@@ -24,6 +25,15 @@ type AtomicWorkCenter struct {
 	TasksMap *xsync.MapOf[string, *Task]
 }
 
+/*
+DESCRIPTION
+
+	新建原子任务中心，这个是单例存在的，并且线程安全
+
+PARAMS
+
+	NULL
+*/
 func NewAtomicWorkCenter() *AtomicWorkCenter {
 	if AtomicWorkCenterInstance == nil {
 		AtomicWorkCenterInstance = &AtomicWorkCenter{
@@ -33,7 +43,16 @@ func NewAtomicWorkCenter() *AtomicWorkCenter {
 	return AtomicWorkCenterInstance
 }
 
-// 添加作业
+/*
+DESCRIPTION
+
+	向原子任务中心添加任务
+
+Params
+
+	task: 任务体信息
+	retry: 重试次数，一般填写为3即可
+*/
 func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
 	// 加上写锁
 	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock(
@@ -43,6 +62,7 @@ func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
 		clilog.Error("[AtomicWorkCenter.AddTask] acquire write lock failed:", err)
 		return false, ""
 	} // 独占写锁
+
 	defer unlock_write_lock_atomic_work_center()
 
 	now := time.Now().Format("2006-1-2 15:04:05") + strconv.Itoa(rand.Intn(30000)+1)
@@ -59,7 +79,15 @@ func (this *AtomicWorkCenter) AddTask(task *Task, retry int) (bool, string) {
 	return true, string_md5
 }
 
-// 获取指定作业的ID
+/*
+DESCRIPTION
+
+	获取指定作业的ID
+
+Parmas
+
+	0 任务的ID，通过AddTask获取的加密ID
+*/
 func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 
 	if task, ok := this.TasksMap.Load(taskId); ok {
@@ -69,17 +97,19 @@ func (this *AtomicWorkCenter) GetTask(taskId string) *Task {
 }
 
 // 让作业继续下一步
-func (this *AtomicWorkCenter) DoNext(taskId string) {
+func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	task := this.GetTask(taskId)
+	fmt.Println(task)
 
 	if task == nil {
 		clilog.Error("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
-		return
+		return errors.New("error!")
 	}
 
 	// 长度验证
 	if task.TaskCurrentIndex+1 >= len(task.TaskBooks) {
 		clilog.Error("[AtomicWorkCenter] Index Error!")
+		return errors.New("error!")
 	}
 
 	// 作业状态信息验证
@@ -88,55 +118,87 @@ func (this *AtomicWorkCenter) DoNext(taskId string) {
 		task.TaskStatus = Running
 	} else if task.TaskStatus == BackRoll {
 		// TODO: 回滚机制
+
 	} else if task.TaskStatus == Success {
+		// 已完成的任务本
 
 	}
 
 	if task.TaskStatus == Running {
 		// TODO: 运行下一个函数
+
 	}
 	var eb *eventbus.AtomicWorkEventBus
 	eb = eventbus.NewAtomicWorkCenterEventBus()
-	eb.EventBus <- "sync-to-local"
+	eb.EventBus <- "sync-to-local" // 同步任务信息
+	return nil
 }
 
-func (this *AtomicWorkCenter) RemoveTask(taskId string) *Task {
+/*
+DESCRIPTIONS
+
+	（不安全）取消某个任务，线程安全，但不进行回滚
+
+PARAMS
+
+	ID 任务ID 通过AddTask获取
+*/
+func (this *AtomicWorkCenter) NoSafeRemoveTask(taskId string) *Task {
 	task, _ := this.TasksMap.LoadAndDelete(taskId)
 	return task
 }
 
+// TODO: 取消任务，删除并回滚
+func (this *AtomicWorkCenter) CancleTask(taskId string) *Task {
+	return nil
+}
+
 // TODO: 完成所有的任务的作业本 直到完成
-func (this *AtomicWorkCenter) DoSustain(taskId string) error {
+/*
+DESCRIPTION
+	完成指定的任务计划（单线程）并返回是否成功
+PARAMS
+	当前的任务ID，通过AddTask的时候获取
+RETURNS
+	error: 函数执行的时候出现的错误
+	bool : 当前任务是否被成功执行到结束
+*/
+func (this *AtomicWorkCenter) DoSustain(taskId string) (error, bool) {
 	task := this.GetTask(taskId)
 
 	// 任务合规性验证
-	if task.TaskReleaseTime.After(time.Now()) {
-		this.RemoveTask(taskId)
-		return errors.New("the task is release now.")
+	if task.TaskReleaseTime.After(time.Now()) { // 任务过期的情况
+		this.NoSafeRemoveTask(taskId)
+		return errors.New("the task is release now."), false
 	}
-	if task.TaskStatus == Success {
-		this.RemoveTask(taskId)
-		return errors.New("the task is finish.")
+	if task.TaskStatus == Success { // 任务已经被执行成功了
+		this.NoSafeRemoveTask(taskId)
+		return errors.New("the task is finish."), true
 	}
 
 	// 任务处理开始
 	if task == nil {
-		return errors.New("[AtomicWorkCenter] KeyError No such an the keyvalue in map!")
+		// 任务不存在的时候额处理方式
+		return errors.New("[AtomicWorkCenter] KeyError No such an the keyvalue in map!"), false
 	}
 	_, unlock_write_lock_atomic_work_center, err := global_lock.GetOrStoreGlobalLock(
 		"write_lock_atomic_work_center", "lock",
-	)
+	) // 对当前的原子任务中心进行加锁 防止线程冲突
+
 	if err != nil {
-		return errors.New("[AtomicWorkCenter] acquire write lock failed：" + err.Error())
+		return errors.New("[AtomicWorkCenter] acquire write lock failed：" + err.Error()), false
 	} // 独占写锁
 	defer unlock_write_lock_atomic_work_center() // 解写锁
 
 	for task.TaskCurrentIndex < len(task.TaskBooks) {
-		this.DoNext(taskId)                          // 执行当前任务的下一个作业
+		err := this.DoNext(taskId) // 执行当前任务的下一个作业
+		if err != nil {
+			//  TODO: DONEXT的错误处理
+		}
 		task.TaskCurrentIndex++                      // 索引增加以便执行下一个作业
 		eb := eventbus.NewAtomicWorkCenterEventBus() // 创建新的事件总线
 		eb.EventBus <- "sync-to-local"               // 序列化内容到服务器本地 以防止宕机恢复
 	}
 
-	return nil
+	return nil, true
 }
