@@ -1,4 +1,7 @@
-<template><div><h1 id="原子任务中心的作用" tabindex="-1"><a class="header-anchor" href="#原子任务中心的作用"><span>原子任务中心的作用</span></a></h1>
+<template><div><blockquote>
+<p>TaskType对应一个TaskBooks，多个TaskBooks组合成一个Task。不同的Task存在在原子任务中心的<code v-pre>TaskMap</code>中以TaskID作为键来进行存储，TaskID的获取方式是通过函数<code v-pre>AddTask</code>的返回值获取的。</p>
+</blockquote>
+<h1 id="原子任务中心的作用" tabindex="-1"><a class="header-anchor" href="#原子任务中心的作用"><span>原子任务中心的作用</span></a></h1>
 <p>当客户端发来<span style="color:#0099FF"><code v-pre>miql</code></span>之后，misakadb要统一进行解析，为了保持miql的任务的原子性、一致性、隔离性、持久性这四个属性，misakaDB需要一个原子任务中心来管理所有的任务。</p>
 <blockquote>
 <p>如当用户发送一个删除任务，这个任务拆分下来就是需要对文件、JSON等进行删除的多个子任务。这些任务需要保证要么不执行要么全部执行。</p>
@@ -17,7 +20,7 @@
 <span class="line"><span class="token comment">// ok: 表示是否添加成功</span></span>
 <span class="line"><span class="token comment">// task_id: 表示任务在中心的唯一标志</span></span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h1 id="原子日志序列器" tabindex="-1"><a class="header-anchor" href="#原子日志序列器"><span>原子日志序列器</span></a></h1>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h1 id="原子日志序列器-json" tabindex="-1"><a class="header-anchor" href="#原子日志序列器-json"><span>原子日志序列器(JSON)</span></a></h1>
 <p><span style="color:#0099FF"><strong>AtomicWorkCenter</strong></span> 管理着所有的任务，我们将这些任务数据可以称为WAL日志。防止宕机等问题导致的数据丢失，我们会在启动之后启动对应的序列器协程。如果需要让协程启动序列化任务可以使用AtomicWorkEventBus总线进行信号通知。</p>
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">var</span> eb <span class="token operator">*</span>eventbus<span class="token punctuation">.</span>AtomicWorkEventBus</span>
 <span class="line">eb <span class="token operator">=</span> eventbus<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenterEventBus</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
@@ -27,7 +30,12 @@
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">workCenterSerializer <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">LoadWorkCenterSerializer</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>WAL的日志默认储存路径是：<code v-pre>.data/work_center.json</code> ， 如果日志大于1MB的时候，系统会对其进行分片存储。atomic_work_center的本质就是 WAL日志的记录。</p>
-<h2 id="原子任务中心结构" tabindex="-1"><a class="header-anchor" href="#原子任务中心结构"><span>原子任务中心结构</span></a></h2>
+<h1 id="原子日志序列器-ndjson" tabindex="-1"><a class="header-anchor" href="#原子日志序列器-ndjson"><span>原子日志序列器(NDJSON)</span></a></h1>
+<div class="hint-container warning">
+<p class="hint-container-title">Warning</p>
+<p>当前版本截至，该开发计划还在排队中, 对项目进度有兴趣的可以查看：<a href="http://blog.6ugo.cn/?view=projects&amp;project=c678ce4e-63c7-49b6-8cd1-4bb3d9b36872" target="_blank" rel="noopener noreferrer">点击跳转</a></p>
+</div>
+<h1 id="原子任务中心结构" tabindex="-1"><a class="header-anchor" href="#原子任务中心结构"><span>原子任务中心结构</span></a></h1>
 <p>原子中心有一个map，map管理了多个task，task管理了多个TaskBooks，也就是作业本。</p>
 <p>原子任务中心维护了一个TasksMap，其主要目的是用于管理存储所有的任务。其map数据结构为：</p>
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token operator">*</span>xsync<span class="token punctuation">.</span>MapOf<span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">,</span> <span class="token operator">*</span>Task<span class="token punctuation">]</span></span>
@@ -69,7 +77,18 @@
 <p class="hint-container-title">Misaka 提醒你</p>
 <p>Task有一个属性叫做TaskCurrentIndex， 用于记录当前的任务的执行位置的，当启动服务之后这个位置不是0状态也不是over的时候表示这个任务可能在执行中途，服务器宕机了。</p>
 </div>
-<h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
+<h2 id="tasktype" tabindex="-1"><a class="header-anchor" href="#tasktype"><span>TaskType</span></a></h2>
+<p>TaskType主要是区别这个TaskBook是做什么的，不同的TaskType对应不同的TaskTypeAction和TaskTypeRoll两个函数。TaskType全部都是通过插件进行注册的，想要对TaskType开发相关进行了解，可以前往插件开发进行查看。<RouteLink to="/posts/article3.html">点击跳转</RouteLink></p>
+<h3 id="tasktypeaction" tabindex="-1"><a class="header-anchor" href="#tasktypeaction"><span>TaskTypeAction</span></a></h3>
+<p>一个<code v-pre>Tasktype</code>对应一个<code v-pre>TasktypeAction</code>，Donext函数等执行函数会通过<code v-pre>TaskBooks</code>的Tasktype找到对应的<code v-pre>TaskTypeAction</code>, 然后进行执行。<code v-pre>TaskTypeAction</code> 的签名是:</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">type</span> FuncTaskTypeAction <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>params 就是TaskBook的属性 <code v-pre>Params</code>。</p>
+<h3 id="tasktyperoll" tabindex="-1"><a class="header-anchor" href="#tasktyperoll"><span>TaskTypeRoll</span></a></h3>
+<p>和 TaskTypeAction 一样， 都是执行函数，只是本函数主要是对事件进行回滚的时候再触发。<code v-pre>TaskTypeRoll</code>的签名是:</p>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">type</span> FuncTaskTypeRoll <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span></span>
+<span class="line"></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
 <p>任务中心支持用户自定义作业本的执行方式，用户可以通过实现<code v-pre>TaskBooks</code>的<code v-pre>TaskType</code>来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。</p>
 </div></template>
 

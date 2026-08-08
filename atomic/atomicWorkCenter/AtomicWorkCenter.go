@@ -118,7 +118,19 @@ func (this *AtomicWorkCenter) GetCurrentTaskBookRef(taskId string) (*tasktype.Ta
 
 }
 
-// 让作业继续下一步
+/*
+DESCRIPTION
+
+	让作业继续下一步，并对异常状态的作业进行处理
+
+RETURNS
+
+	error 报错，当执行Action报错的时候会标记为回滚
+
+PARAMS
+
+	taskID: 任务ID 通过AddTask获取
+*/
 func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	task := this.GetTask(taskId)
 	fmt.Println(task)
@@ -145,11 +157,12 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	}
 
 	if task.TaskStatus == Running {
-		// TODO: 运行下一个函数
+		// 运行下一个函数
 
 		pluginx_bus := pluginsx.GetPluginsBus()
 		taskbooks, err := this.GetCurrentTaskBookRef(taskId)
 		taskbooks_tasktype := taskbooks.TaskType
+
 		if err != nil {
 			return err
 		}
@@ -167,7 +180,11 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 		}
 
 		// 执行 tasktype actions
-		actions_fn(tasktype, taskbooks.Params)
+		err = actions_fn(tasktype, taskbooks.Params)
+		if err != nil {
+			task.TaskStatus = BackRoll // 待回滚
+			return err                 // action函数本身的报错， 这里报错的化需要回滚整个任务链
+		}
 	}
 	var eb *eventbus.AtomicWorkEventBus
 	eb = eventbus.NewAtomicWorkCenterEventBus()

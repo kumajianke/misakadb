@@ -1,14 +1,13 @@
 <template><div><h1 id="misakadb" tabindex="-1"><a class="header-anchor" href="#misakadb"><span>MisakaDB</span></a></h1>
 <p><img src="@source/logos.png" alt=""></p>
 <blockquote>
-<p>[!NOTE]
-便捷简单的文档数据库，始终如一。</p>
+<p>便捷简单的文档数据库，始终如一。</p>
 </blockquote>
 <div class="hint-container tip">
 <p class="hint-container-title">Tips</p>
 <p>misaka的命名来自动漫《魔法禁书目录》、《某科学的超电池炮》的炮姐，御坂美琴中的御坂(misaka)及衍生的御坂网络，在后期我们也会仿造misaka来实现对应的分布式技术。</p>
 </div>
-<p><code v-pre>MisakaDB</code> 是一个轻量级的 JSON 文档数据库，支持 <code v-pre>JSON</code> 格式的内容字段存储。在 0.0.3 版本，仅支持单机模式。</p>
+<p><code v-pre>MisakaDB</code> 是一个轻量级的 JSON 文档数据库，支持 <code v-pre>JSON</code> 格式的内容字段存储。在 0.0.3 版本，仅支持单机模式。在0.17版本之后，支持插件模式，开发者可以在Misaka源码中开发自定义的插件，从而提高CRUD的效率。</p>
 <h2 id="特性" tabindex="-1"><a class="header-anchor" href="#特性"><span>特性</span></a></h2>
 <ul>
 <li>轻量级设计，部署简单</li>

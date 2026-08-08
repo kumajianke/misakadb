@@ -8,6 +8,8 @@ tag:
 description: 原子任务中心介绍
 ---
 
+> TaskType对应一个TaskBooks，多个TaskBooks组合成一个Task。不同的Task存在在原子任务中心的`TaskMap`中以TaskID作为键来进行存储，TaskID的获取方式是通过函数`AddTask`的返回值获取的。
+
 # 原子任务中心的作用
 当客户端发来<span style="color:#0099FF">`miql`</span>之后，misakadb要统一进行解析，为了保持miql的任务的原子性、一致性、隔离性、持久性这四个属性，misakaDB需要一个原子任务中心来管理所有的任务。
 
@@ -29,7 +31,7 @@ ok, task_id := atomic.addTask(task, 3) // 尝试添加任务到原子中心 可�
 // task_id: 表示任务在中心的唯一标志
 ```
 
-# 原子日志序列器
+# 原子日志序列器(JSON)
 <span style="color:#0099FF">**AtomicWorkCenter**</span> 管理着所有的任务，我们将这些任务数据可以称为WAL日志。防止宕机等问题导致的数据丢失，我们会在启动之后启动对应的序列器协程。如果需要让协程启动序列化任务可以使用AtomicWorkEventBus总线进行信号通知。
 
 ```go
@@ -46,7 +48,12 @@ workCenterSerializer := atomic_work_center.LoadWorkCenterSerializer()
 
 WAL的日志默认储存路径是：`.data/work_center.json` ， 如果日志大于1MB的时候，系统会对其进行分片存储。atomic_work_center的本质就是 WAL日志的记录。
 
-## 原子任务中心结构
+# 原子日志序列器(NDJSON)
+:::warning
+当前版本截至，该开发计划还在排队中, 对项目进度有兴趣的可以查看：[点击跳转](http://blog.6ugo.cn/?view=projects&project=c678ce4e-63c7-49b6-8cd1-4bb3d9b36872)
+:::
+
+# 原子任务中心结构
 原子中心有一个map，map管理了多个task，task管理了多个TaskBooks，也就是作业本。
 
 原子任务中心维护了一个TasksMap，其主要目的是用于管理存储所有的任务。其map数据结构为：
@@ -92,6 +99,23 @@ type TaskBooks struct {
 ::: tip Misaka 提醒你
 Task有一个属性叫做TaskCurrentIndex， 用于记录当前的任务的执行位置的，当启动服务之后这个位置不是0状态也不是over的时候表示这个任务可能在执行中途，服务器宕机了。
 :::
+
+## TaskType
+TaskType主要是区别这个TaskBook是做什么的，不同的TaskType对应不同的TaskTypeAction和TaskTypeRoll两个函数。TaskType全部都是通过插件进行注册的，想要对TaskType开发相关进行了解，可以前往插件开发进行查看。[点击跳转](article3.html)
+
+### TaskTypeAction
+一个`Tasktype`对应一个`TasktypeAction`，Donext函数等执行函数会通过`TaskBooks`的Tasktype找到对应的`TaskTypeAction`, 然后进行执行。`TaskTypeAction` 的签名是:
+```go
+type FuncTaskTypeAction = func(taskType tasktype.TaskType, params []string) error
+``` 
+params 就是TaskBook的属性 `Params`。
+
+### TaskTypeRoll
+和 TaskTypeAction 一样， 都是执行函数，只是本函数主要是对事件进行回滚的时候再触发。`TaskTypeRoll`的签名是:
+```go
+type FuncTaskTypeRoll = func(taskType tasktype.TaskType, params []string) error
+```
+
 
 ##### 插件支持
 任务中心支持用户自定义作业本的执行方式，用户可以通过实现`TaskBooks`的`TaskType`来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。
