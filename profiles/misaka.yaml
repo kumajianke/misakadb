@@ -12,4 +12,4 @@ private:
     storage:
         path: ./midatas
         plugins:
-            - misaka basic mode @misaka
+            - misaka basic mode on v0.1.8@misaka |dir=base_unloader

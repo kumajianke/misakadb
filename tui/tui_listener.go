@@ -159,7 +159,13 @@ func renderPluginsMode() {
 
 	configuredPlugins := make([]string, 0)
 	if cfg := config.GetGlobalMisakaConfigure(); cfg != nil {
-		configuredPlugins = append(configuredPlugins, cfg.Private.Storage.Plugins...)
+		for _, plugin := range cfg.Private.Storage.Plugins {
+			pluginName := pluginsloader.NormalizeConfiguredPluginName(plugin)
+			if pluginName == "" {
+				continue
+			}
+			configuredPlugins = append(configuredPlugins, pluginName)
+		}
 	}
 	loadedPlugins := pluginsloader.GetLoadedPluginsSnapshot()
 

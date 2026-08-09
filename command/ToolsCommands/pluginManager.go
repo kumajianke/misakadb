@@ -24,28 +24,22 @@ const defaultBridgeFilePath = "./plugins/pluginbridge/bridge_gen.go"
 const defaultModulePath = "misakadb"
 
 func installPlugin(pluginDir string) error {
-	manifest, err := pluginsloader.LoadPluginManifest(pluginDir) // 获取插件清单
-	if err != nil {
-		return fmt.Errorf("加载插件清单失败: %w", err)
-	}
-
-	if strings.TrimSpace(manifest.Name) == "" { // 获取插件的名称
-		return fmt.Errorf("插件清单缺少 name: %s", pluginDir)
-	}
-
 	cfg, err := config.LoadMisakaConfigure(defaultConfigPath)
 	if err != nil {
 		return fmt.Errorf("加载配置文件失败: %w", err)
 	}
 
-	pluginName := strings.TrimSpace(manifest.Name)
+	pluginName, configuredEntry, err := buildConfiguredEntryFromPluginDir(".", pluginDir)
+	if err != nil {
+		return err
+	}
 	for _, installed := range cfg.Private.Storage.Plugins {
-		if strings.TrimSpace(installed) == pluginName {
+		if pluginsloader.NormalizeConfiguredPluginName(installed) == pluginName {
 			return nil
 		}
 	}
 
-	cfg.Private.Storage.Plugins = append(cfg.Private.Storage.Plugins, pluginName)
+	cfg.Private.Storage.Plugins = append(cfg.Private.Storage.Plugins, configuredEntry)
 	return saveMisakaConfigure(defaultConfigPath, cfg)
 }
 
@@ -55,10 +49,10 @@ func uninstallPlugin(pluginName string) error {
 		return fmt.Errorf("加载配置文件失败: %w", err)
 	}
 
-	pluginName = strings.TrimSpace(pluginName)
+	pluginName = pluginsloader.NormalizeConfiguredPluginName(pluginName)
 	filtered := make([]string, 0, len(cfg.Private.Storage.Plugins))
 	for _, installed := range cfg.Private.Storage.Plugins {
-		if strings.TrimSpace(installed) != pluginName {
+		if pluginsloader.NormalizeConfiguredPluginName(installed) != pluginName {
 			filtered = append(filtered, installed)
 		}
 	}
@@ -71,8 +65,43 @@ func listAllPlugins() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	installed := cfg.Private.Storage.Plugins // 获取安装的所有插件
+	installed := make([]string, 0, len(cfg.Private.Storage.Plugins))
+	for _, plugin := range cfg.Private.Storage.Plugins {
+		pluginName := pluginsloader.NormalizeConfiguredPluginName(plugin)
+		if pluginName == "" {
+			continue
+		}
+		installed = append(installed, pluginName)
+	}
 	return installed, nil
+}
+
+func syncInstalledPlugins() error {
+	cfg, err := config.LoadMisakaConfigure(defaultConfigPath)
+	if err != nil {
+		return fmt.Errorf("加载配置文件失败: %w", err)
+	}
+
+	configuredPlugins := uniqueConfiguredPlugins(cfg.Private.Storage.Plugins)
+	pluginDirs, err := resolveConfiguredPluginDirs(".", configuredPlugins)
+	if err != nil {
+		return err
+	}
+
+	refreshedPlugins := make([]string, 0, len(pluginDirs))
+	for _, pluginDir := range pluginDirs {
+		_, configuredEntry, err := buildConfiguredEntryFromPluginDir(".", pluginDir)
+		if err != nil {
+			return fmt.Errorf("重新安装插件 %s 失败: %w", pluginDir, err)
+		}
+		refreshedPlugins = append(refreshedPlugins, configuredEntry)
+	}
+
+	cfg.Private.Storage.Plugins = refreshedPlugins
+	if err := saveMisakaConfigure(defaultConfigPath, cfg); err != nil {
+		return fmt.Errorf("写入刷新后的插件配置失败: %w", err)
+	}
+	return nil
 }
 
 func rebuildAfterPluginChange() error {
@@ -122,13 +151,84 @@ func syncPluginBridge() error {
 		return fmt.Errorf("加载配置文件失败: %w", err)
 	}
 
-	imports, err := resolveEnabledPluginImports(".", cfg.Private.Storage.Plugins)
+	imports, err := resolveEnabledPluginImports(".", uniqueConfiguredPlugins(cfg.Private.Storage.Plugins))
 	if err != nil {
 		return err
 	}
 
 	clilog.Info(fmt.Sprintf("插件列表: %v", imports))
 	return writePluginBridgeFile(imports)
+}
+
+func resolveConfiguredPluginDirs(repoRoot string, enabledPlugins []string) ([]string, error) {
+	pluginDirs, err := discoverPluginDirs(repoRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	dirByName := make(map[string]string, len(pluginDirs))
+	for _, pluginDir := range pluginDirs {
+		manifest, err := pluginsloader.LoadPluginManifest(pluginDir)
+		if err != nil {
+			return nil, fmt.Errorf("加载插件清单失败 %s: %w", pluginDir, err)
+		}
+
+		pluginName := strings.TrimSpace(manifest.Name)
+		if pluginName == "" {
+			return nil, fmt.Errorf("插件清单缺少 name: %s", pluginDir)
+		}
+		if existingDir, ok := dirByName[pluginName]; ok && existingDir != pluginDir {
+			return nil, fmt.Errorf("发现重名插件 %q: %s 与 %s", pluginName, existingDir, pluginDir)
+		}
+		dirByName[pluginName] = pluginDir
+	}
+
+	resolvedDirs := make([]string, 0, len(enabledPlugins))
+	for _, rawPlugin := range enabledPlugins {
+		entry := pluginsloader.ParseConfiguredPluginEntry(rawPlugin)
+		if entry.Name == "" {
+			continue
+		}
+
+		if entry.DirHint != "" {
+			pluginDir := filepath.Clean(filepath.Join(repoRoot, filepath.FromSlash(entry.DirHint)))
+			manifest, err := pluginsloader.LoadPluginManifest(pluginDir)
+			if err != nil {
+				return nil, fmt.Errorf("已安装插件 %q 的目录定位 %q 无效: %w", entry.Name, entry.DirHint, err)
+			}
+			if strings.TrimSpace(manifest.Name) != entry.Name {
+				return nil, fmt.Errorf("已安装插件 %q 的目录定位 %q 指向了插件 %q", entry.Name, entry.DirHint, strings.TrimSpace(manifest.Name))
+			}
+			resolvedDirs = append(resolvedDirs, pluginDir)
+			continue
+		}
+
+		pluginDir, ok := dirByName[entry.Name]
+		if !ok {
+			clilog.Warning(fmt.Sprintf("跳过无法定位目录的旧插件配置: %s", entry.Name))
+			continue
+		}
+		resolvedDirs = append(resolvedDirs, pluginDir)
+	}
+
+	return resolvedDirs, nil
+}
+
+func uniqueConfiguredPlugins(pluginEntries []string) []string {
+	unique := make([]string, 0, len(pluginEntries))
+	seen := make(map[string]struct{}, len(pluginEntries))
+	for _, rawEntry := range pluginEntries {
+		pluginName := pluginsloader.NormalizeConfiguredPluginName(rawEntry)
+		if pluginName == "" {
+			continue
+		}
+		if _, ok := seen[pluginName]; ok {
+			continue
+		}
+		seen[pluginName] = struct{}{}
+		unique = append(unique, rawEntry)
+	}
+	return unique
 }
 
 func resolveEnabledPluginImports(repoRoot string, enabledPlugins []string) ([]pluginImportEntry, error) {
@@ -175,15 +275,37 @@ func resolveEnabledPluginImports(repoRoot string, enabledPlugins []string) ([]pl
 	}
 
 	resolvedImports := make([]pluginImportEntry, 0, len(enabledPlugins))
-	for _, pluginName := range enabledPlugins {
-		pluginName = strings.TrimSpace(pluginName)
-		if pluginName == "" {
+	for _, rawPlugin := range enabledPlugins {
+		entryConfig := pluginsloader.ParseConfiguredPluginEntry(rawPlugin)
+		if entryConfig.Name == "" {
 			continue
 		}
 
-		entry, ok := manifestByName[pluginName]
+		if entryConfig.DirHint != "" {
+			pluginDir := filepath.Clean(filepath.Join(repoRoot, filepath.FromSlash(entryConfig.DirHint)))
+			manifest, err := pluginsloader.LoadPluginManifest(pluginDir)
+			if err != nil {
+				return nil, fmt.Errorf("已启用插件 %q 的目录定位 %q 无效: %w", entryConfig.Name, entryConfig.DirHint, err)
+			}
+			if strings.TrimSpace(manifest.Name) != entryConfig.Name {
+				return nil, fmt.Errorf("已启用插件 %q 的目录定位 %q 指向了插件 %q", entryConfig.Name, entryConfig.DirHint, strings.TrimSpace(manifest.Name))
+			}
+
+			bootImportPath, bootFunction, err := resolvePluginBootReference(repoRoot, pluginDir, manifest.Boot)
+			if err != nil {
+				return nil, fmt.Errorf("解析插件 %q 的 boot 配置失败: %w", entryConfig.Name, err)
+			}
+			resolvedImports = append(resolvedImports, pluginImportEntry{
+				Name:         entryConfig.Name,
+				ImportPath:   bootImportPath,
+				BootFunction: bootFunction,
+			})
+			continue
+		}
+
+		entry, ok := manifestByName[entryConfig.Name]
 		if !ok {
-			return nil, fmt.Errorf("已启用插件 %q 未找到对应的 plugin.yaml，无法生成桥接导入", pluginName)
+			return nil, fmt.Errorf("已启用插件 %q 未找到对应的 plugin.yaml，无法生成桥接导入", entryConfig.Name)
 		}
 		resolvedImports = append(resolvedImports, entry)
 	}
@@ -252,6 +374,35 @@ func resolvePluginBootReference(repoRoot string, pluginDir string, boot string) 
 	return importPath, functionName, nil
 }
 
+func buildPluginDirHint(repoRoot string, pluginDir string) (string, error) {
+	relPath, err := filepath.Rel(repoRoot, pluginDir)
+	if err != nil {
+		return "", fmt.Errorf("计算插件目录相对路径失败 %s: %w", pluginDir, err)
+	}
+	if strings.HasPrefix(relPath, "..") {
+		return "", fmt.Errorf("插件目录必须位于项目根目录内: %s", pluginDir)
+	}
+	return filepath.ToSlash(filepath.Clean(relPath)), nil
+}
+
+func buildConfiguredEntryFromPluginDir(repoRoot string, pluginDir string) (string, string, error) {
+	manifest, err := pluginsloader.LoadPluginManifest(pluginDir)
+	if err != nil {
+		return "", "", fmt.Errorf("加载插件清单失败: %w", err)
+	}
+
+	pluginName := strings.TrimSpace(manifest.Name)
+	if pluginName == "" {
+		return "", "", fmt.Errorf("插件清单缺少 name: %s", pluginDir)
+	}
+
+	pluginDirHint, err := buildPluginDirHint(repoRoot, pluginDir)
+	if err != nil {
+		return "", "", err
+	}
+	return pluginName, pluginsloader.BuildConfiguredPluginEntry(pluginName, pluginDirHint), nil
+}
+
 func discoverPluginDirs(repoRoot string) ([]string, error) {
 	dirs := make([]string, 0)
 	err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, walkErr error) error {
@@ -303,7 +454,9 @@ func writePluginBridgeFile(imports []pluginImportEntry) error {
 	}
 
 	if len(imports) == 0 {
-		// 没有插件的情况 不需要使用 pluginbridge 了
+		if err := os.Remove(defaultBridgeFilePath); err != nil && !os.IsNotExist(err) {
+			return err
+		}
 		return nil
 	}
 
@@ -313,7 +466,7 @@ func writePluginBridgeFile(imports []pluginImportEntry) error {
 	builder.WriteString("// Code generated by misaka-tools. DO NOT EDIT.\n")
 	builder.WriteString("import (\n")
 	builder.WriteString("\tpluginsloader \"misakadb/plugins/pluginsLoader\"\n")
-	builder.WriteString("\"misakadb/clilog\"\n")
+	builder.WriteString("\t\"misakadb/clilog\"\n")
 
 	for _, entry := range imports {
 		builder.WriteString(fmt.Sprintf("\t%s %q\n", entry.ImportAlias, entry.ImportPath))

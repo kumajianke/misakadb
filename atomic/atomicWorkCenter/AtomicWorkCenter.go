@@ -9,7 +9,7 @@ import (
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
-	pluginsx "misakadb/plugins/pluginsX"
+	pluginsx "misakadb/plugins/pluginsx"
 	"strconv"
 	"time"
 

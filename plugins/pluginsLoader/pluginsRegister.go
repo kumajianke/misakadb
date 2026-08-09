@@ -35,7 +35,7 @@ func isPluginEnabled(plugin string) bool {
 
 // normalizePluginName 对插件名做基础归一化处理，删除前后的空格。
 func normalizePluginName(plugin string) string {
-	return strings.TrimSpace(plugin)
+	return NormalizeConfiguredPluginName(plugin)
 }
 
 // markPluginLoaded 标记插件已经完成注册加载。

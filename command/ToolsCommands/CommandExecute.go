@@ -204,6 +204,21 @@ func CommandExecute(command_all []string) {
 		}
 		clilog.Success("插件卸载成功，已从 profiles/misaka.yaml 移除并完成重新编译")
 
+	case "plu-sync":
+		if len(command_all) != 1 {
+			clilog.Error("错误用法，正确用法misaka-tools plu-sync")
+			os.Exit(0)
+		}
+		if err := syncInstalledPlugins(); err != nil {
+			clilog.Error("刷新插件列表失败:", err)
+			os.Exit(0)
+		}
+		if err := rebuildAfterPluginChange(); err != nil {
+			clilog.Error("插件刷新后自动编译失败:", err)
+			os.Exit(0)
+		}
+		clilog.Success("插件刷新成功，已重新扫描已安装插件并完成重新编译")
+
 	default:
 		clilog.Error("错误的命令, 你无法这么实现。")
 	}
@@ -355,9 +370,10 @@ func printAdminHelp() {
 	clilog.Info("可用命令:")
 	fmt.Println("  chpwd <username>")
 	fmt.Println("  change-password <username>")
-	fmt.Println("  pul-add <path>")
-	fmt.Println("  pul-remove <plugin-name>")
-	fmt.Println("  pul-list")
+	fmt.Println("  plu-add <path>")
+	fmt.Println("  plu-remove <plugin-name>")
+	fmt.Println("  plu-list")
+	fmt.Println("  plu-sync")
 	fmt.Println("  chmod <username> <role>")
 	fmt.Println("  remove <username>")
 	fmt.Println("  remote <username> <flag>")
