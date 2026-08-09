@@ -10,6 +10,7 @@ import (
 	"misakadb/config"
 	pluginsX "misakadb/plugins/pluginsx"
 	pluginsXInterface "misakadb/plugins/pluginsx/pluginsx_interface"
+	pluginsxInterface "misakadb/plugins/pluginsx/pluginsx_interface"
 )
 
 var (
@@ -175,5 +176,14 @@ func RegisterPluginsActionsInTaskTypeRoll(plugin string, taskType tasktype.TaskT
 	}
 	markPluginLoaded(plugin)
 	pluginsX.GetPluginsX().TaskTypeRoll.Store(taskType, action)
+	return nil
+}
+
+func RegisterPluginsTaskCombo(combo_name string, combo_func pluginsxInterface.FuncTaskCombo) error {
+	pluginsx := pluginsX.GetPluginsX()
+	if _, ok := pluginsx.TaskCombo.Load(combo_name); ok {
+		return fmt.Errorf("has duplicate combo name: %s", combo_name)
+	}
+	pluginsx.TaskCombo.Store(combo_name, combo_func)
 	return nil
 }

@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
+	base_combo "misakadb/base_unloader/Combo"
 	baseconfig "misakadb/base_unloader/base_config"
 	"misakadb/lock/global_lock"
 	pluginsloader "misakadb/plugins/pluginsLoader"
-	"misakadb/plugins/pluginsx"
-	pluginsxInterface "misakadb/plugins/pluginsx/pluginsx_interface"
 	filesafe "misakadb/shares/filesafe"
 	"os"
 	"path/filepath"
@@ -97,7 +96,11 @@ func AddTaskTypeAction() error {
 /*
 添加 TaskCombo
 */
-func AddTaskCombo(combo_name string, combo_func pluginsxInterface.FuncTaskCombo) error {
-	pluginsx.GetPluginsX()
+func AddTaskCombo() error {
+
+	if err := pluginsloader.RegisterPluginsTaskCombo("drop_db", base_combo.ComboRemoveDatabase); err != nil {
+		return err
+	} // 添加删除数据库的 Combo
+
 	return nil
 }

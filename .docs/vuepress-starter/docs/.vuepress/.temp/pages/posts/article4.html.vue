@@ -3,7 +3,7 @@
 <p class="hint-container-title">常规更新</p>
 <h3 id="feature" tabindex="-1"><a class="header-anchor" href="#feature"><span>feature</span></a></h3>
 <ul>
-<li>新增<code v-pre>TaskCombo</code>;</li>
+<li>实现 <code v-pre>TaskCombo</code>、<code v-pre>AddTaskCombo</code> 等业务函数;</li>
 <li>实现删除数据库逻辑;</li>
 </ul>
 <h3 id="chore" tabindex="-1"><a class="header-anchor" href="#chore"><span>chore</span></a></h3>

@@ -11,6 +11,10 @@ func Register() error {
 		return err
 	}
 
+	if err := AddTaskCombo(); err != nil {
+		return err
+	}
+
 	clilog.Success("基础插件加载完毕.")
 	return nil
 }

@@ -11,7 +11,7 @@ description: 一些更新导致的改动
 ## V0.1.8
 :::tip 常规更新
 ### feature
-- 新增`TaskCombo`;
+- 实现 `TaskCombo`、`AddTaskCombo` 等业务函数;
 - 实现删除数据库逻辑;
 
 ### chore

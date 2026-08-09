@@ -1,4 +1,4 @@
-package combo
+package base_combo
 
 import (
 	"errors"
