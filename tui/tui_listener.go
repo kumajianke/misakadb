@@ -242,7 +242,7 @@ func executePluginsModeCommand() {
 	case "", ":":
 		return
 	case ":out-alias":
-		aliasDocs := pluginsX.GetPluginsBus().GetTaskAliasDocsSnapshot()
+		aliasDocs := pluginsX.GetPluginsX().GetTaskAliasDocsSnapshot()
 		if len(aliasDocs) == 0 {
 			pluginModeOutput = append(pluginModeOutput, "当前没有已注册的别名规则")
 			return

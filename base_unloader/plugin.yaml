@@ -1,2 +1,3 @@
-name: "misaka basic mode @misaka"
-boot: "./tasks.go/Register()"
+name: "misaka basic mode on v0.1.8@misaka"
+boot: "./register.go/Register()"
+version: "v0.1.8"

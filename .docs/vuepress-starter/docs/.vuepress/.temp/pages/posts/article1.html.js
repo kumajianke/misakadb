@@ -1,3 +1,16 @@
 import comp from "G:/project-pipline/misakadb/.docs/vuepress-starter/docs/.vuepress/.temp/pages/posts/article1.html.vue"
 const data = JSON.parse("{\"path\":\"/posts/article1.html\",\"title\":\"全局锁池\",\"lang\":\"en-US\",\"frontmatter\":{\"date\":\"2026-06-22T00:00:00.000Z\",\"title\":\"全局锁池\",\"category\":[\"内部实现\"],\"tag\":[\"全局锁池\"],\"description\":\"全局锁池的实现\"},\"headers\":[{\"level\":2,\"title\":\"全局锁池的实现\",\"slug\":\"全局锁池的实现\",\"link\":\"#全局锁池的实现\",\"children\":[]},{\"level\":2,\"title\":\"使用方法\",\"slug\":\"使用方法\",\"link\":\"#使用方法\",\"children\":[]},{\"level\":2,\"title\":\"知其所以然\",\"slug\":\"知其所以然\",\"link\":\"#知其所以然\",\"children\":[]},{\"level\":2,\"title\":\"源码解析\",\"slug\":\"源码解析\",\"link\":\"#源码解析\",\"children\":[{\"level\":3,\"title\":\"V0.17新增\",\"slug\":\"v0-17新增\",\"link\":\"#v0-17新增\",\"children\":[]}]}],\"git\":{\"updatedTime\":1785755827000,\"contributors\":[{\"name\":\"hello_kuma\",\"username\":\"\",\"email\":\"2791528600@qq.com\",\"commits\":4}],\"changelog\":[{\"hash\":\"ed754a9923c859c51b8919ade42d9b013f82a051\",\"time\":1785755827000,\"email\":\"2791528600@qq.com\",\"author\":\"hello_kuma\",\"message\":\"更新markdown\"},{\"hash\":\"7fc80838e84c201e900ffe0f4ff31ca91f0cdad6\",\"time\":1782207557000,\"email\":\"2791528600@qq.com\",\"author\":\"hello_kuma\",\"message\":\"docs: 完善项目文档，新增原子分块文件写入能力\"},{\"hash\":\"69e642cd7165a7597b033d81461055122b6017da\",\"time\":1782117365000,\"email\":\"2791528600@qq.com\",\"author\":\"hello_kuma\",\"message\":\"update the document of misakadb\"},{\"hash\":\"8626ce43170c6b2ec42c38ae5c83146f2b849150\",\"time\":1782111363000,\"email\":\"2791528600@qq.com\",\"author\":\"hello_kuma\",\"message\":\"实现内部文档挂在到 misaka.kuamre.cn\"}]},\"filePathRelative\":\"posts/article1.md\",\"excerpt\":\"\\n<div class=\\\"hint-container tip\\\">\\n<p class=\\\"hint-container-title\\\">什么是全局锁池</p>\\n<p>全局锁池可以帮助我们快速的在项目中对某个资源、操作句柄进行上锁。</p>\\n</div>\\n<h2>全局锁池的实现</h2>\\n<p>全局锁池内部被划分为两个子池：</p>\\n<ul>\\n<li><code>YoungPool</code>：存储当前高频访问、命中率较高的热点锁</li>\\n<li><code>OldPool</code>：存储暂时降级的锁，用于后续淘汰和回收判断</li>\\n</ul>\\n<p>业务线程在获取锁时，会优先查询 <code>YoungPool</code>。如果未命中，再继续查询 <code>OldPool</code>。一旦在 <code>OldPool</code> 中找到目标锁，就会将该锁重新提升到 <code>YoungPool</code>，从而让热点锁始终尽量停留在更快命中的路径上。</p>\"}")
 export { comp, data }
+
+if (import.meta.webpackHot) {
+  import.meta.webpackHot.accept()
+  if (__VUE_HMR_RUNTIME__.updatePageData) {
+    __VUE_HMR_RUNTIME__.updatePageData(data)
+  }
+}
+
+if (import.meta.hot) {
+  import.meta.hot.accept(({ data }) => {
+    __VUE_HMR_RUNTIME__.updatePageData(data)
+  })
+}

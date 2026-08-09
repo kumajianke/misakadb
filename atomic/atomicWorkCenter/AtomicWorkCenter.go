@@ -9,7 +9,7 @@ import (
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
-	"misakadb/plugins/pluginsx"
+	pluginsx "misakadb/plugins/pluginsX"
 	"strconv"
 	"time"
 
@@ -20,12 +20,12 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-var AtomicWorkCenterInstance *AtomicWorkCenter
-
 // 作业中心
 type AtomicWorkCenter struct {
 	TasksMap *xsync.MapOf[string, *Task]
 }
+
+var AtomicWorkCenterInstance *AtomicWorkCenter
 
 /*
 DESCRIPTION
@@ -159,7 +159,7 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 	if task.TaskStatus == Running {
 		// 运行下一个函数
 
-		pluginx_bus := pluginsx.GetPluginsBus()
+		pluginx_bus := pluginsx.GetPluginsX()
 		taskbooks, err := this.GetCurrentTaskBookRef(taskId)
 		taskbooks_tasktype := taskbooks.TaskType
 

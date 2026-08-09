@@ -23,8 +23,9 @@ type Task struct {
 
 func NewTask(TaskBooks []*tasktype.TaskBooks) *Task {
 	return &Task{
-		TaskStatus:      Pending,
-		TaskReleaseTime: time.Now().Add(time.Second * 10), // 十秒后过期
-		TaskBooks:       TaskBooks,
+		TaskStatus:       Pending,
+		TaskReleaseTime:  time.Now().Add(time.Second * 10), // 十秒后过期
+		TaskBooks:        TaskBooks,
+		TaskCurrentIndex: 0,
 	}
 }

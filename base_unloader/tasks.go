@@ -4,18 +4,14 @@ import (
 	"errors"
 	"fmt"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
-	"misakadb/clilog"
+	baseconfig "misakadb/base_unloader/base_config"
 	"misakadb/lock/global_lock"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	"misakadb/plugins/pluginsx"
+	pluginsxInterface "misakadb/plugins/pluginsx/pluginsx_interface"
 	filesafe "misakadb/shares/filesafe"
 	"os"
 	"path/filepath"
-)
-
-const (
-	TaskRemoveFile   tasktype.TaskType = "remove_file"
-	TaskModFile      tasktype.TaskType = "mod_file"
-	TaskRemoveFolder tasktype.TaskType = "remove_folder"
 )
 
 /*
@@ -79,10 +75,10 @@ func RollRemoveFile(taskType tasktype.TaskType, params []string) error {
 添加TaskType
 */
 func AddTaskType() error {
-	if err := pluginsloader.RegisterPluginTaskTypeWithAlias(modName, "misaka.removefile@用于删除文件的tasktype", TaskRemoveFile); err != nil {
+	if err := pluginsloader.RegisterPluginTaskTypeWithAlias(baseconfig.ModName, "misaka.removefile@用于删除文件的tasktype", baseconfig.TaskRemoveFile); err != nil {
 		return fmt.Errorf("register alias %s failed: %w", "misaka.removefile", err)
 	}
-	if err := pluginsloader.RegisterPluginTaskTypeWithAlias(modName, "misaka.removefolder@用于删目录的tasktype", TaskRemoveFolder); err != nil {
+	if err := pluginsloader.RegisterPluginTaskTypeWithAlias(baseconfig.ModName, "misaka.removefolder@用于删目录的tasktype", baseconfig.TaskRemoveFolder); err != nil {
 		return fmt.Errorf("register alias %s failed: %w", "misaka.removefolder", err)
 	}
 	return nil
@@ -92,21 +88,16 @@ func AddTaskType() error {
 添加TaskTypeAction
 */
 func AddTaskTypeAction() error {
-	if err := pluginsloader.RegisterPluginsActionsInTaskTypeAction(modName, TaskRemoveFile, OnRemoveFile); err != nil {
+	if err := pluginsloader.RegisterPluginsActionsInTaskTypeAction(baseconfig.ModName, baseconfig.TaskRemoveFile, OnRemoveFile); err != nil {
 		return fmt.Errorf("register task action failed: %w", err)
 	}
 	return nil
 }
 
-func Register() error {
-	if err := AddTaskType(); err != nil {
-		return err
-	}
-
-	if err := AddTaskTypeAction(); err != nil {
-		return err
-	}
-
-	clilog.Success("基础插件加载完毕.")
+/*
+添加 TaskCombo
+*/
+func AddTaskCombo(combo_name string, combo_func pluginsxInterface.FuncTaskCombo) error {
+	pluginsx.GetPluginsX()
 	return nil
 }

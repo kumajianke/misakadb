@@ -88,7 +88,12 @@
 <p>和 TaskTypeAction 一样， 都是执行函数，只是本函数主要是对事件进行回滚的时候再触发。<code v-pre>TaskTypeRoll</code>的签名是:</p>
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">type</span> FuncTaskTypeRoll <span class="token operator">=</span> <span class="token keyword">func</span><span class="token punctuation">(</span>taskType tasktype<span class="token punctuation">.</span>TaskType<span class="token punctuation">,</span> params <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span></span>
 <span class="line"></span></code></pre>
-<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><h3 id="taskcombo-v0-1-8" tabindex="-1"><a class="header-anchor" href="#taskcombo-v0-1-8"><span>TaskCombo (V0.1.8)</span></a></h3>
+<blockquote>
+<p>0.1.8新增内容</p>
+</blockquote>
+<p><code v-pre>Combo</code> 有连招之译，<code v-pre>TaskCombo</code> 就是对一个完整的业务进行打包组合成一个特殊的Task, 如：删除数据库、查询数据库等。</p>
+<h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
 <p>任务中心支持用户自定义作业本的执行方式，用户可以通过实现<code v-pre>TaskBooks</code>的<code v-pre>TaskType</code>来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。</p>
 </div></template>
 

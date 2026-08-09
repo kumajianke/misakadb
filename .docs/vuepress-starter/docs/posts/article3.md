@@ -125,5 +125,5 @@ func Register() error {
 
 ### 常见插件术语
 #### pluginsx
-`pluginsx` 是 `Misaka` 用于管理插件上下的包，插件注册的所有内容都放在了 `pluginsx.PluginsBus{}` 对象上。其中PluginsBus是单例存在的，使用函数 `GetPluginsBus` 获取唯一引用。
+`pluginsx` 是 `Misaka` 用于管理插件上下的包，插件注册的所有内容都放在了 `pluginsx.PluginsX{}` 对象上。其中PluginsX是单例存在的，使用函数 `GetPluginsX` 获取唯一引用。
 

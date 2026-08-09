@@ -116,6 +116,10 @@ params 就是TaskBook的属性 `Params`。
 type FuncTaskTypeRoll = func(taskType tasktype.TaskType, params []string) error
 ```
 
+### TaskCombo (V0.1.8)
+> 0.1.8新增内容
+
+`Combo` 有连招之译，`TaskCombo` 就是对一个完整的业务进行打包组合成一个特殊的Task, 如：删除数据库、查询数据库等。
 
 ##### 插件支持
 任务中心支持用户自定义作业本的执行方式，用户可以通过实现`TaskBooks`的`TaskType`来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。

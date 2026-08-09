@@ -76,10 +76,10 @@ func RegisterPluginTaskTypeWithAlias(plugin string, alias string, taskType taskt
 
 	markPluginLoaded(plugin)
 
-	pluginsBus := pluginsX.GetPluginsBus()
-	pluginsBus.StoreTaskTypeAlias(aliasDoc.Alias, taskType)
-	pluginsBus.StoreTaskAliasDoc(aliasDoc)
-	pluginsBus.TaskTypes = append(pluginsBus.TaskTypes, taskType)
+	PluginsX := pluginsX.GetPluginsX()
+	PluginsX.StoreTaskTypeAlias(aliasDoc.Alias, taskType)
+	PluginsX.StoreTaskAliasDoc(aliasDoc)
+	PluginsX.TaskTypes = append(PluginsX.TaskTypes, taskType)
 
 	return nil
 }
@@ -90,7 +90,7 @@ func ResolveTaskType(alias string) (tasktype.TaskType, bool) {
 	if alias == "" {
 		return "", false
 	}
-	return pluginsX.GetPluginsBus().ResolveTaskType(alias)
+	return pluginsX.GetPluginsX().ResolveTaskType(alias)
 }
 
 func parseTaskAliasDoc(rawAlias string, plugin string, taskType tasktype.TaskType) (pluginsX.TaskAliasDoc, error) {
@@ -149,12 +149,12 @@ func RegisterPluginsActionsInTaskType(plugin string, action pluginsXInterface.Fu
 	}
 	markPluginLoaded(plugin)
 
-	pluginsBus := pluginsX.GetPluginsBus()
-	taskTypes, err := action(pluginsBus.TaskTypes)
+	PluginsX := pluginsX.GetPluginsX()
+	taskTypes, err := action(PluginsX.TaskTypes)
 	if err != nil {
 		return err
 	}
-	pluginsBus.TaskTypes = taskTypes
+	PluginsX.TaskTypes = taskTypes
 	return nil
 }
 
@@ -164,7 +164,7 @@ func RegisterPluginsActionsInTaskTypeAction(plugin string, taskType tasktype.Tas
 		return nil
 	}
 	markPluginLoaded(plugin)
-	pluginsX.GetPluginsBus().TaskTypeActions.Store(taskType, action)
+	pluginsX.GetPluginsX().TaskTypeActions.Store(taskType, action)
 	return nil
 }
 
@@ -174,6 +174,6 @@ func RegisterPluginsActionsInTaskTypeRoll(plugin string, taskType tasktype.TaskT
 		return nil
 	}
 	markPluginLoaded(plugin)
-	pluginsX.GetPluginsBus().TaskTypeRoll.Store(taskType, action)
+	pluginsX.GetPluginsX().TaskTypeRoll.Store(taskType, action)
 	return nil
 }

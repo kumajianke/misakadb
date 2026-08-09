@@ -131,7 +131,7 @@
 </ul>
 <h3 id="常见插件术语" tabindex="-1"><a class="header-anchor" href="#常见插件术语"><span>常见插件术语</span></a></h3>
 <h4 id="pluginsx" tabindex="-1"><a class="header-anchor" href="#pluginsx"><span>pluginsx</span></a></h4>
-<p><code v-pre>pluginsx</code> 是 <code v-pre>Misaka</code> 用于管理插件上下的包，插件注册的所有内容都放在了 <code v-pre>pluginsx.PluginsBus{}</code> 对象上。其中PluginsBus是单例存在的，使用函数 <code v-pre>GetPluginsBus</code> 获取唯一引用。</p>
+<p><code v-pre>pluginsx</code> 是 <code v-pre>Misaka</code> 用于管理插件上下的包，插件注册的所有内容都放在了 <code v-pre>pluginsx.PluginsX{}</code> 对象上。其中PluginsX是单例存在的，使用函数 <code v-pre>GetPluginsX</code> 获取唯一引用。</p>
 </div></template>
 
 
