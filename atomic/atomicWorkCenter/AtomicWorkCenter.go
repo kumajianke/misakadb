@@ -211,13 +211,17 @@ func (this *AtomicWorkCenter) CancleTask(taskId string) *Task {
 	return nil
 }
 
-// TODO: 完成所有的任务的作业本 直到完成
 /*
 DESCRIPTION
+
 	完成指定的任务计划（单线程）并返回是否成功
+
 PARAMS
+
 	当前的任务ID，通过AddTask的时候获取
+
 RETURNS
+
 	error: 函数执行的时候出现的错误
 	bool : 当前任务是否被成功执行到结束
 */
