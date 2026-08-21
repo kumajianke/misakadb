@@ -187,3 +187,11 @@ func RegisterPluginsTaskCombo(combo_name string, combo_func pluginsxInterface.Fu
 	pluginsx.TaskCombo.Store(combo_name, combo_func)
 	return nil
 }
+
+/*
+ TODO 通过插件注册的comboname获取对应的combo函数
+*/
+
+func GetPluginsTaskCombo(combo_name string) (pluginsXInterface.FuncTaskCombo, error) {
+	return nil, nil
+}
