@@ -12,27 +12,26 @@ import (
 )
 
 type WorkCenterSerializer struct {
-	TaskMap       map[string]*atomic_work_center.Task `json:"task_map"`
-	_thread__chan chan string                         `json:"-"`
+	TaskMap       map[string]*atomic_work_center.Task  `json:"task_map"`
+	_thread__chan chan string                          `json:"-"`
+	workCenter    *atomic_work_center.AtomicWorkCenter `json:"-"`
 }
 
 func BuildWorkCenterSerializer(wc *atomic_work_center.AtomicWorkCenter) *WorkCenterSerializer {
 	buildWorkCenterSerializer := &WorkCenterSerializer{
 		TaskMap:       make(map[string]*atomic_work_center.Task),
 		_thread__chan: make(chan string, 5),
+		workCenter:    wc,
 	} // 创建一个序列化容器
-
-	syncMap := wc.TasksMap // 作业中心任务映射
-
-	// 遍历任务映射，将任务添加到序列化器中
-	syncMap.Range(func(key string, value *atomic_work_center.Task) bool {
-		buildWorkCenterSerializer.TaskMap[key] = value
-		return true
-	})
 	return buildWorkCenterSerializer
 }
 
 func (this *WorkCenterSerializer) Dump() {
+	if this.workCenter == nil {
+		this._thread__chan <- "file_write_error"
+		return
+	}
+
 	// 加锁
 	_, unlock, err := global_lock.GetOrStoreGlobalLock("WorkCenterSerializerDump", "l")
 	if err != nil {
@@ -50,6 +49,14 @@ func (this *WorkCenterSerializer) Dump() {
 		}
 	}
 
+	// 每次落盘重新生成快照，避免只保存启动时的空任务表。
+	taskMap := make(map[string]*atomic_work_center.Task)
+	this.workCenter.TasksMap.Range(func(key string, value *atomic_work_center.Task) bool {
+		taskMap[key] = value
+		return true
+	})
+	this.TaskMap = taskMap
+
 	// 存储Marshal化数据
 	jsonData, err := json.Marshal(this)
 
@@ -58,12 +65,6 @@ func (this *WorkCenterSerializer) Dump() {
 		jsonData,
 		0644,
 	)
-
-	if err != nil {
-		this._thread__chan <- "file_write_error"
-		return
-	}
-	// 强制刷盘
 
 	if err != nil {
 		this._thread__chan <- "file_write_error"
@@ -124,6 +125,7 @@ func LoadWorkCenterSerializer() *WorkCenterSerializer {
 		clilog.Error("[loadwork-center]" + err.Error())
 		return nil
 	}
+	workCenterSerializer._thread__chan = make(chan string, 5)
 
 	return workCenterSerializer
 }

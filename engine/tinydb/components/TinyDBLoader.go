@@ -92,12 +92,12 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 	)
 	jsonData, err := json.Marshal(metaJson)
 	if err != nil {
-		clilog.Error("[err]InitLoader error: JsonData error")
+		clilog.Error("[err]InitLoader error: JsonData error1")
 		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
 	err = atomic_file_handler.AtomicSyncWriteFile(fileName, []byte(jsonData), 0600)
 	if err != nil {
-		clilog.Error("[err]InitLoader error: JsonData error")
+		clilog.Error("[err]InitLoader error: JsonData error2")
 		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
 	if generashares.IsWindows() {

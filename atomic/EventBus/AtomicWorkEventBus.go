@@ -1,5 +1,7 @@
 package eventbus
 
+import "sync"
+
 /**
  * 原子任务中心事件总线 用于原子任务中心的内部通讯
  */
@@ -9,14 +11,13 @@ type AtomicWorkEventBus struct {
 }
 
 var AtomicWorkEventBusInstance *AtomicWorkEventBus
+var atomicWorkEventBusOnce sync.Once
 
 func NewAtomicWorkCenterEventBus() *AtomicWorkEventBus {
-	if AtomicWorkEventBusInstance == nil {
+	atomicWorkEventBusOnce.Do(func() {
 		AtomicWorkEventBusInstance = &AtomicWorkEventBus{
 			EventBus: make(chan string, 10),
 		}
-		return AtomicWorkEventBusInstance
-	} else {
-		return AtomicWorkEventBusInstance
-	}
+	})
+	return AtomicWorkEventBusInstance
 }

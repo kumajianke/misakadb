@@ -44,14 +44,15 @@ func InitPlugins() {
 		os.Exit(0)
 	}
 
-	work_center_serializer.FastInitWorkCenterSerializer() // 初始化启动原子作业中心及序列器
-	workCenter := atomic_work_center.NewAtomicWorkCenter()
-	wcs := work_center_serializer.BuildWorkCenterSerializer(workCenter)
-	workCenter, err := wcs.Convert2AtomicWorkCenter()
-	if err != nil {
-		clilog.Error("Convert2AtomicWorkCenter failed:", err)
-		os.Exit(0)
+	// 先恢复上次未完成任务，再启动实时序列化监听。
+	if wcs := work_center_serializer.LoadWorkCenterSerializer(); wcs != nil {
+		if _, err := wcs.Convert2AtomicWorkCenter(); err != nil {
+			clilog.Error("Convert2AtomicWorkCenter failed:", err)
+			os.Exit(1)
+		}
 	}
+	work_center_serializer.FastInitWorkCenterSerializer()
+	_ = atomic_work_center.NewAtomicWorkCenter()
 }
 
 func main() {

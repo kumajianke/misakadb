@@ -5,12 +5,14 @@ import (
 	atomic_work_center "misakadb/atomic/atomicWorkCenter"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	"misakadb/clilog"
+	"misakadb/config"
 	mson "misakadb/engine/Mson"
 	engine_dispatch "misakadb/engine/dispatch"
 	"misakadb/lock/global_lock"
 	"misakadb/miusers"
 	"misakadb/network/context"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	"path/filepath"
 )
 
 func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
@@ -61,12 +63,12 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 		global_lock.GetLocksPrefix().DBFile+dbname,
 		"l",
 	)
-	defer unlock()
 
 	if err != nil {
 		serviceContext.Send("[err]" + err.Error())
 		return err
 	}
+	defer unlock()
 
 	// 具体删除
 
@@ -77,7 +79,7 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 
 	work_center := atomic_work_center.NewAtomicWorkCenter() // 原子任务中心
 	task_ship := tasktype.NewShipBuilder().Add(
-		dropDBTaskType, dbname,
+		dropDBTaskType, filepath.Join(config.GetGlobalMisakaConfigure().Private.Storage.Path, dbname),
 	).Build()
 
 	remove_task := atomic_work_center.NewTask(task_ship)
@@ -86,7 +88,10 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 	if !ok {
 		return errors.New("create task failed")
 	}
-	work_center.DoNext(task_key)
+	if err, ok := work_center.DoSustain(task_key); err != nil || !ok {
+		return err
+	}
+	serviceContext.Send("[ok]drop db is ok!")
 
 	return nil
 }

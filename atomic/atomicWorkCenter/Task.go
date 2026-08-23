@@ -24,7 +24,7 @@ type Task struct {
 func NewTask(TaskBooks []*tasktype.TaskBooks) *Task {
 	return &Task{
 		TaskStatus:       Pending,
-		TaskReleaseTime:  time.Now().Add(time.Second * 10), // 十秒后过期
+		TaskReleaseTime:  time.Now().Add(time.Hour), // 为重试和宕机恢复保留足够时间
 		TaskBooks:        TaskBooks,
 		TaskCurrentIndex: 0,
 	}

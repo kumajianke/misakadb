@@ -70,6 +70,41 @@ func RollRemoveFile(taskType tasktype.TaskType, params []string) error {
 	return filesafe.Fsync(only_path)
 }
 
+func OnRemoveFolder(taskType tasktype.TaskType, params []string) error {
+	if len(params) != 1 {
+		return errors.New("Argument error: remove folder requires one path")
+	}
+	path := params[0]
+	parent, name := filepath.Dir(path), filepath.Base(path)
+	unlock, err := global_lock.LockFileHandle(path)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if err := os.Rename(path, filepath.Join(parent, "MisakaRemove."+name)); err != nil {
+		return err
+	}
+	return filesafe.Fsync(parent)
+}
+
+func RollRemoveFolder(taskType tasktype.TaskType, params []string) error {
+	if len(params) != 1 {
+		return errors.New("Argument error: rollback remove folder requires one path")
+	}
+	path := params[0]
+	parent, name := filepath.Dir(path), filepath.Base(path)
+	removed := filepath.Join(parent, "MisakaRemove."+name)
+	unlock, err := global_lock.LockFileHandle(removed)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if err := os.Rename(removed, path); err != nil {
+		return err
+	}
+	return filesafe.Fsync(parent)
+}
+
 /*
 添加TaskType
 */
@@ -89,6 +124,15 @@ func AddTaskType() error {
 func AddTaskTypeAction() error {
 	if err := pluginsloader.RegisterPluginsActionsInTaskTypeAction(baseconfig.ModName, baseconfig.TaskRemoveFile, OnRemoveFile); err != nil {
 		return fmt.Errorf("register task action failed: %w", err)
+	}
+	if err := pluginsloader.RegisterPluginsActionsInTaskTypeAction(baseconfig.ModName, baseconfig.TaskRemoveFolder, OnRemoveFolder); err != nil {
+		return fmt.Errorf("register folder task action failed: %w", err)
+	}
+	if err := pluginsloader.RegisterPluginsActionsInTaskTypeRoll(baseconfig.ModName, baseconfig.TaskRemoveFile, RollRemoveFile); err != nil {
+		return fmt.Errorf("register task rollback failed: %w", err)
+	}
+	if err := pluginsloader.RegisterPluginsActionsInTaskTypeRoll(baseconfig.ModName, baseconfig.TaskRemoveFolder, RollRemoveFolder); err != nil {
+		return fmt.Errorf("register folder rollback failed: %w", err)
 	}
 	return nil
 }
