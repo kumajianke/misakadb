@@ -100,6 +100,7 @@ func (this *TinyDBLoaderImp) InitLoader(log mson.MsonParse) error {
 		clilog.Error("[err]InitLoader error: JsonData error2")
 		return errors.New("InitLoader error: JsonData error: " + err.Error())
 	}
+
 	if generashares.IsWindows() {
 		err = exec.Command("attrib", "+h", dbMetaDir).Run()
 		if err != nil {

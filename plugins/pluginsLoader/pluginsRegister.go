@@ -1,6 +1,7 @@
 package pluginsloader
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -189,9 +190,14 @@ func RegisterPluginsTaskCombo(combo_name string, combo_func pluginsxInterface.Fu
 }
 
 /*
- TODO 通过插件注册的comboname获取对应的combo函数
+ TODO
 */
 
 func GetPluginsTaskCombo(combo_name string) (pluginsXInterface.FuncTaskCombo, error) {
-	return nil, nil
+	pluginx := pluginsX.GetPluginsX()
+	combo, ok := pluginx.TaskCombo.Load(combo_name)
+	if !ok {
+		return nil, errors.New("No such as the key in pluginx.TaskCombo!")
+	}
+	return combo, nil
 }

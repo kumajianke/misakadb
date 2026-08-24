@@ -10,6 +10,6 @@ service:
     debug: true
 private:
     storage:
-        path: ./midatas
+        path: ./db-datas
         plugins:
             - misaka basic mode on v0.1.8@misaka |dir=base_unloader

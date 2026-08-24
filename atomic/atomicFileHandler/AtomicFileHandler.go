@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"misakadb/clilog"
 	"misakadb/lock/global_lock"
+	"misakadb/shares"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,6 +32,9 @@ func syncDir(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
 		return err
+	}
+	if shares.IsWindows() {
+		return nil
 	}
 	defer d.Close()
 	return d.Sync()
@@ -77,6 +81,11 @@ func atomicSyncWriteFileUnlocked(filename string, content []byte, perm os.FileMo
 		return err
 	}
 	if err = tempFile.Sync(); err != nil {
+		return err
+	}
+
+	// Windows 环境需要先关闭在进行重命名
+	if err := tempFile.Close(); err != nil {
 		return err
 	}
 
@@ -182,13 +191,17 @@ func ChunkAtomicSyncWriteFile(filename string, content []byte, perm os.FileMode)
 			return 0, err
 		}
 	}
+	if !shares.IsWindows() {
+		// 强制同步目录
+		if err := syncDir(filepath.Dir(chunkDir)); err != nil {
+			return 0, err
+		}
 
-	// 强制同步目录
-	if err := syncDir(filepath.Dir(chunkDir)); err != nil {
-		return 0, err
+		return totalChunks, nil
 	}
-
+	clilog.Warning("Windows not support sync the dir, has hazard in process.")
 	return totalChunks, nil
+
 }
 
 // 先尝试合并分片，若已是单文件则直接读取。不负责加锁。

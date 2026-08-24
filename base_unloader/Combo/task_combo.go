@@ -6,6 +6,7 @@ import (
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 	baseconfig "misakadb/base_unloader/base_config"
 	"misakadb/config"
+	"misakadb/lock/global_lock"
 	"path"
 )
 
@@ -32,11 +33,26 @@ func ComboRemoveDatabase(params []string) (error, string) {
 	storage := config.GetGlobalMisakaConfigure().Private.Storage
 	db_name := params[0]
 	db_path := path.Join(storage.Path, db_name)
-	taskbook := tasktype.NewShipBuilder().Add(baseconfig.TaskRemoveFile, db_path).Build()
+	_, unlock, err := global_lock.GetOrStoreGlobalLock(
+		global_lock.GetLocksPrefix().DBFile+db_name,
+		"l",
+	)
+	if err != nil {
+		return err, ""
+	}
+	defer unlock()
+
+	taskbook := tasktype.NewShipBuilder().Add(baseconfig.TaskRemoveFolder, db_path).Build()
 	task := atomic_work_center.NewTask(taskbook)
 	ok, task_id := awc.AddTask(task, 3)
-	if ok {
-		return nil, task_id
+	if !ok {
+		return errors.New("create task failed"), ""
 	}
-	return errors.New("Task Add Error on ComboRemoveDatabase!"), ""
+	if err, ok := awc.DoSustain(task_id); err != nil || !ok {
+		if err == nil {
+			err = errors.New("execute delete database task failed")
+		}
+		return err, task_id
+	}
+	return nil, task_id
 }
