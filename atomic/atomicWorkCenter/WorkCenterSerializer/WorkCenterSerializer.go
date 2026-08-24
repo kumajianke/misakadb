@@ -97,9 +97,9 @@ func (this *WorkCenterSerializer) WorkerCenterSerializerThread(retryTimes int) b
 // 快速启动原子作业持久化
 func FastInitWorkCenterSerializer() *WorkCenterSerializer {
 	workCenterSerializer := BuildWorkCenterSerializer(
-		atomic_work_center.NewAtomicWorkCenter(),
+		atomic_work_center.GetAtomicWorkCenter(),
 	)
-	eb := eventbus.NewAtomicWorkCenterEventBus()
+	eb := eventbus.GetAtomicWorkCenterEventBus()
 	go func() {
 		clilog.Success("[Atomic Work Center Serializer]fast boot over!")
 		for msg := range eb.EventBus {
@@ -157,7 +157,7 @@ func (this *WorkCenterSerializer) Convert2AtomicWorkCenter() (
 	defer unlock_write_lock_atomic_work_center()
 
 	taskMap := this.TaskMap // 序列器所有的map
-	atomicWorkCenter := atomic_work_center.NewAtomicWorkCenter()
+	atomicWorkCenter := atomic_work_center.GetAtomicWorkCenter()
 
 	atomicWorkCenter.TasksMap.Clear() // 清空原子作业中心任务映射
 

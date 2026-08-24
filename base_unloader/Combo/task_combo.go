@@ -29,7 +29,7 @@ func ComboRemoveDatabase(params []string) (error, string) {
 		return errors.New("Argument Error on ComboRemoveDatabase!"), ""
 	}
 
-	awc := atomic_work_center.NewAtomicWorkCenter()
+	awc := atomic_work_center.GetAtomicWorkCenter()
 	storage := config.GetGlobalMisakaConfigure().Private.Storage
 	db_name := params[0]
 	db_path := path.Join(storage.Path, db_name)
@@ -48,6 +48,8 @@ func ComboRemoveDatabase(params []string) (error, string) {
 	if !ok {
 		return errors.New("create task failed"), ""
 	}
+
+	// 执行删除任务书
 	if err, ok := awc.DoSustain(task_id); err != nil || !ok {
 		if err == nil {
 			err = errors.New("execute delete database task failed")

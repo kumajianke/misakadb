@@ -52,7 +52,7 @@ func InitPlugins() {
 		}
 	}
 	work_center_serializer.FastInitWorkCenterSerializer()
-	_ = atomic_work_center.NewAtomicWorkCenter()
+	_ = atomic_work_center.GetAtomicWorkCenter()
 }
 
 func main() {

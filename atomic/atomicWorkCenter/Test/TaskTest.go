@@ -8,7 +8,7 @@ import (
 )
 
 func TestTask() {
-	atomicWorkCenter := atomic_work_center.NewAtomicWorkCenter()
+	atomicWorkCenter := atomic_work_center.GetAtomicWorkCenter()
 	task := atomic_work_center.NewTask(nil)
 
 	remove_file, ok := pluginsloader.ResolveTaskType(

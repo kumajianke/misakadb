@@ -17,7 +17,7 @@ description: 原子任务中心介绍
 
 所以我们执行多个需要多步骤的任务不能直接进行执行，而是把子任务一次性追加到我们的新任务中。
 ```go
-atomic := atomic_work_center.NewAtomicWorkCenter();
+atomic := atomic_work_center.GetAtomicWorkCenter();
 // 创建一个原子任务中心
 task = atomic_work_center.NewTask(nil);
 // 创建一个空任务
@@ -36,7 +36,7 @@ ok, task_id := atomic.addTask(task, 3) // 尝试添加任务到原子中心 可�
 
 ```go
 var eb *eventbus.AtomicWorkEventBus
-eb = eventbus.NewAtomicWorkCenterEventBus()
+eb = eventbus.GetAtomicWorkCenterEventBus()
 eb.EventBus <- "sync-to-local" // 通知序列器协程启动序列化任务
 ```
 
@@ -63,7 +63,7 @@ WAL的日志默认储存路径是：`.data/work_center.json` ， 如果日志大
 键表示任务的唯一标志，值表示任务体指针。Task是任务体结构，包含多个作业本。
 举一个例子，当我们添加一个任务的时候：
 ```go
-center := atomic_work_center.NewAtomicWorkCenter()
+center := atomic_work_center.GetAtomicWorkCenter()
 ok, task_id := center.AddTask(task, 3)
 ```
 AddTask方式会返回两个值：

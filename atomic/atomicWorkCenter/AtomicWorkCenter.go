@@ -38,7 +38,7 @@ PARAMS
 
 	NULL
 */
-func NewAtomicWorkCenter() *AtomicWorkCenter {
+func GetAtomicWorkCenter() *AtomicWorkCenter {
 	atomicWorkCenterOnce.Do(func() {
 		AtomicWorkCenterInstance = &AtomicWorkCenter{
 			TasksMap: xsync.NewMapOf[string, *Task](),
@@ -189,7 +189,7 @@ func (this *AtomicWorkCenter) DoNext(taskId string) error {
 			task.TaskStatus = Success
 		}
 	}
-	eb := eventbus.NewAtomicWorkCenterEventBus()
+	eb := eventbus.GetAtomicWorkCenterEventBus()
 	select {
 	case eb.EventBus <- "sync-to-local":
 	default:
@@ -283,7 +283,7 @@ func (this *AtomicWorkCenter) DoSustain(taskId string) (error, bool) {
 			this.CancleTask(taskId) // 回滚任务
 			return err, false
 		}
-		eb := eventbus.NewAtomicWorkCenterEventBus() // 创建新的事件总线
+		eb := eventbus.GetAtomicWorkCenterEventBus() // 创建新的事件总线
 		select {
 		case eb.EventBus <- "sync-to-local":
 		default:

@@ -8,6 +8,7 @@ import (
 	baseconfig "misakadb/base_unloader/base_config"
 	"misakadb/lock/global_lock"
 	pluginsloader "misakadb/plugins/pluginsLoader"
+	"misakadb/shares"
 	filesafe "misakadb/shares/filesafe"
 	"os"
 	"path/filepath"
@@ -81,9 +82,19 @@ func OnRemoveFolder(taskType tasktype.TaskType, params []string) error {
 		return err
 	}
 	defer unlock()
+	if f, err := os.Open("MisakaRemove." + name); err != nil {
+		f.Close()
+		if os.IsNotExist(err) {
+			os.Remove("MisakaRemove." + name)
+		}
+	}
 	if err := os.Rename(path, filepath.Join(parent, "MisakaRemove."+name)); err != nil {
 		return err
 	}
+	if shares.IsWindows() {
+		return nil
+	}
+
 	return filesafe.Fsync(parent)
 }
 

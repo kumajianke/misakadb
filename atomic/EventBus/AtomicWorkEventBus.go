@@ -13,7 +13,7 @@ type AtomicWorkEventBus struct {
 var AtomicWorkEventBusInstance *AtomicWorkEventBus
 var atomicWorkEventBusOnce sync.Once
 
-func NewAtomicWorkCenterEventBus() *AtomicWorkEventBus {
+func GetAtomicWorkCenterEventBus() *AtomicWorkEventBus {
 	atomicWorkEventBusOnce.Do(func() {
 		AtomicWorkEventBusInstance = &AtomicWorkEventBus{
 			EventBus: make(chan string, 10),
