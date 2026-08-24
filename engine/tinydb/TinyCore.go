@@ -1,12 +1,9 @@
 package engine
 
 import (
-	"misakadb/clilog"
+	atomicX "misakadb/atomic"
 	engine_base "misakadb/engine/base"
 	"misakadb/engine/tinydb/components"
-	"misakadb/lock/global_lock"
-	"os"
-	"path/filepath"
 )
 
 type TinyDBCore struct {
@@ -20,26 +17,7 @@ type TinyDBCore struct {
 var _ engine_base.BaseEngineCore = (*TinyDBCore)(nil)
 
 func (this *TinyDBCore) RemoveDB(dbname string) error {
-
-	_, unlock, err := global_lock.GetOrStoreGlobalLock(global_lock.GetLocksPrefix().DBFile+dbname, "l")
-	if err != nil {
-		return err
-	}
-	defer unlock()
-
-	path := filepath.Join(".", "db-datas", dbname)
-
-	_, err = os.Stat(path)
-	if err != nil {
-		clilog.Error("[err] cannot found this db: " + dbname)
-		return err
-	}
-	err = os.RemoveAll(path)
-	if err != nil {
-		clilog.Error("[err] cannot remove this db: " + dbname)
-		return err
-	}
-	return nil
+	return atomicX.AtomicDropDB(dbname)
 }
 
 // 数据库引擎的备份组件

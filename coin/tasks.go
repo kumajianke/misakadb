@@ -1,11 +1,12 @@
-package base_unloader
+package coin
 
 import (
 	"errors"
 	"fmt"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
-	base_combo "misakadb/base_unloader/Combo"
-	baseconfig "misakadb/base_unloader/base_config"
+	"misakadb/clilog"
+	base_combo "misakadb/coin/Combo"
+	baseconfig "misakadb/coin/base_config"
 	"misakadb/lock/global_lock"
 	pluginsloader "misakadb/plugins/pluginsLoader"
 	"misakadb/shares"
@@ -78,19 +79,27 @@ func OnRemoveFolder(taskType tasktype.TaskType, params []string) error {
 	path := params[0]
 	parent, name := filepath.Dir(path), filepath.Base(path)
 	unlock, err := global_lock.LockFileHandle(path)
+
 	if err != nil {
 		return err
 	}
+
 	defer unlock()
-	if f, err := os.Open("MisakaRemove." + name); err != nil {
+	new_path := filepath.Join(parent, "MisakaRemove."+name)
+
+	f, err := os.Open(new_path)
+	if err == nil {
+		// 如果文件已经存在那里把她删除掉
 		f.Close()
-		if os.IsNotExist(err) {
-			os.Remove("MisakaRemove." + name)
-		}
+		clilog.Warning("[Warning] The cache generated for the deleted file conflicts with the cache of the historical file, now remove the history")
+		os.RemoveAll(new_path)
 	}
-	if err := os.Rename(path, filepath.Join(parent, "MisakaRemove."+name)); err != nil {
+
+	if err := os.Rename(path, new_path); err != nil {
+		clilog.Error("rename the folder error:" + err.Error())
 		return err
 	}
+
 	if shares.IsWindows() {
 		return nil
 	}

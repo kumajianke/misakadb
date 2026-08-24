@@ -7,7 +7,7 @@
 <p>如当用户发送一个删除任务，这个任务拆分下来就是需要对文件、JSON等进行删除的多个子任务。这些任务需要保证要么不执行要么全部执行。</p>
 </blockquote>
 <p>所以我们执行多个需要多步骤的任务不能直接进行执行，而是把子任务一次性追加到我们的新任务中。</p>
-<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">atomic <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">atomic <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">GetAtomicWorkCenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 创建一个原子任务中心</span></span>
 <span class="line">task <span class="token operator">=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewTask</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span><span class="token punctuation">;</span></span>
 <span class="line"><span class="token comment">// 创建一个空任务</span></span>
@@ -23,7 +23,7 @@
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h1 id="原子日志序列器-json" tabindex="-1"><a class="header-anchor" href="#原子日志序列器-json"><span>原子日志序列器(JSON)</span></a></h1>
 <p><span style="color:#0099FF"><strong>AtomicWorkCenter</strong></span> 管理着所有的任务，我们将这些任务数据可以称为WAL日志。防止宕机等问题导致的数据丢失，我们会在启动之后启动对应的序列器协程。如果需要让协程启动序列化任务可以使用AtomicWorkEventBus总线进行信号通知。</p>
 <div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">var</span> eb <span class="token operator">*</span>eventbus<span class="token punctuation">.</span>AtomicWorkEventBus</span>
-<span class="line">eb <span class="token operator">=</span> eventbus<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenterEventBus</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<span class="line">eb <span class="token operator">=</span> eventbus<span class="token punctuation">.</span><span class="token function">GetAtomicWorkCenterEventBus</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line">eb<span class="token punctuation">.</span>EventBus <span class="token operator">&lt;-</span> <span class="token string">"sync-to-local"</span> <span class="token comment">// 通知序列器协程启动序列化任务</span></span>
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><p>我们也可以加载本地WAL日志到内存:</p>
@@ -42,7 +42,7 @@
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div></div></div><p>键表示任务的唯一标志，值表示任务体指针。Task是任务体结构，包含多个作业本。
 举一个例子，当我们添加一个任务的时候：</p>
-<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">center <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">NewAtomicWorkCenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line">center <span class="token operator">:=</span> atomic_work_center<span class="token punctuation">.</span><span class="token function">GetAtomicWorkCenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span>
 <span class="line">ok<span class="token punctuation">,</span> task_id <span class="token operator">:=</span> center<span class="token punctuation">.</span><span class="token function">AddTask</span><span class="token punctuation">(</span>task<span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span></span>
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div></div></div><p>AddTask方式会返回两个值：</p>

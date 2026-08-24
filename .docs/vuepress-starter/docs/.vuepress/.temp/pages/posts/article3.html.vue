@@ -12,7 +12,7 @@
 <span class="line"></span></code></pre>
 <div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div></div></div><p>其中属性name表示的是我们的插件名称，建议开发者在名称后面加上自己的签名这样方便区分相同的插件重名。boot是我们启动之后运行的函数。</p>
 <p>接着编写插件代码，贴上参考代码便于启动:</p>
-<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">package</span> base_unloader</span>
+<div class="language-go line-numbers-mode" data-highlighter="prismjs" data-ext="go"><pre v-pre><code><span class="line"><span class="token keyword">package</span> coin</span>
 <span class="line"></span>
 <span class="line"><span class="token keyword">import</span> <span class="token punctuation">(</span></span>
 <span class="line">	<span class="token string">"fmt"</span></span>

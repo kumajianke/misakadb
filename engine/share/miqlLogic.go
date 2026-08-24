@@ -2,7 +2,6 @@ package share
 
 import (
 	"errors"
-	base_combo "misakadb/base_unloader/Combo"
 	"misakadb/clilog"
 	mson "misakadb/engine/Mson"
 	engine_dispatch "misakadb/engine/dispatch"
@@ -10,12 +9,18 @@ import (
 	"misakadb/network/context"
 )
 
+/*
+DESCRIPTION
+
+	RunMson 分发 Miql 到【新增数据库】逻辑
+*/
 func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
 	if msonParse.Active != "cre-dat" {
 		return errors.New("Error Dispatch!")
 	}
 
-	engineName := msonParse.Engine                                    // 获取到对应的引擎名字
+	engineName := msonParse.Engine // 获取到对应的引擎名字
+
 	dbEngine := engine_dispatch.NewEngine(engineName, msonParse.Name) // 数据库引擎
 
 	if dbEngine == nil {
@@ -38,13 +43,23 @@ func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConn
 	return nil
 }
 
-func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
-	if msonPaese.Active != "drp-dat" {
+/*
+DESCRIPTION
+
+	RunMson 分发 Miql 到【删除数据库】逻辑
+*/
+func MiqlDropDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
+	if msonParse.Active != "drp-dat" {
 		return errors.New("Error Dispatch!")
 	}
 
-	dbname := msonPaese.Name
+	dbname := msonParse.Name
 	username := serviceContext.LoginUser
+
+	engineName := msonParse.Engine
+	// 获取到对应的引擎名字
+	dbEngine := engine_dispatch.NewEngine(engineName, msonParse.Name) // 数据库引擎
+
 	// 鉴权操作
 	err := miusers.NewUserManager().VerifyRole(username, "root")
 	if err != nil {
@@ -52,11 +67,12 @@ func MiqlDropDB(msonPaese *mson.MsonParse, serviceContext *context.ServiceConnCo
 		return err
 	}
 
-	if err, _ := base_combo.ComboRemoveDatabase([]string{dbname}); err != nil {
-		serviceContext.Send("[err]" + err.Error())
-		return err
+	// 执行操作
+	if err := dbEngine.RemoveDB(dbname); err != nil {
+		serviceContext.Send("[err]atomic-drop-db err: " + err.Error())
+		return nil
 	}
-	serviceContext.Send("[ok]drop db is ok!")
 
+	serviceContext.Send("[ok]drop db is ok!")
 	return nil
 }

@@ -4,7 +4,7 @@ package pluginbridge
 import (
 	pluginsloader "misakadb/plugins/pluginsLoader"
 	"misakadb/clilog"
-	plugin_0 "misakadb/base_unloader"
+	plugin_0 "misakadb/coin"
 )
 
 func RegisterBuiltinPlugins() {

@@ -1,4 +1,4 @@
-package atomic
+package atomicX
 
 import (
 	pluginsloader "misakadb/plugins/pluginsLoader"

@@ -4,7 +4,7 @@ import (
 	"errors"
 	atomic_work_center "misakadb/atomic/atomicWorkCenter"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
-	baseconfig "misakadb/base_unloader/base_config"
+	baseconfig "misakadb/coin/base_config"
 	"misakadb/config"
 	"misakadb/lock/global_lock"
 	"path"

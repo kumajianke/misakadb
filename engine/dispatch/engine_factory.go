@@ -11,7 +11,7 @@ func NewEngine(engineName string, db_name string) engine_base.BaseEngineCore {
 		return engine.NewTinyEngine(db_name)
 	}
 
-	return nil
+	return engine.NewTinyEngine(db_name) // 使用 tinydb 作为默认数据库引擎
 }
 
 func GetDBEngine(dbname string) (engine_base.BaseEngineCore, error) {

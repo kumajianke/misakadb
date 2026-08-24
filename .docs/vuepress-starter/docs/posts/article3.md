@@ -28,7 +28,7 @@ boot: "./tasks.go/Register()"
 
 接着编写插件代码，贴上参考代码便于启动:
 ```go
-package base_unloader
+package coin
 
 import (
 	"fmt"

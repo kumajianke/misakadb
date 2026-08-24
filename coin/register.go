@@ -1,4 +1,4 @@
-package base_unloader
+package coin
 
 import "misakadb/clilog"
 

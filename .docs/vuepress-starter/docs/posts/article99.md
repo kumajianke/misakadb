@@ -11,18 +11,22 @@ description: 一些更新导致的改动
 ## V0.1.8
 :::tip 常规更新
 ### fixed
-- Windows环境下，强制落盘目录导致无权限的Bug;
-- 
+- Windows环境中，强制落盘目录导致无权限的Bug;
+- Windows环境中，部分场景下，删除数据库无权限的提醒;
+
 ### feature
 - 实现 `TaskCombo`、`AddTaskCombo` 等业务函数;
-- 实现删除数据库逻辑;
-
+- 实现删除数据库逻辑, 并挂载给 `TinyDB` 引擎;
+- 修改内置库 `atoimc` 库名称为 `atomicX`;
+- `engine.NewTinyEngine`
 ### chore
 - 加入更新日志
 
 ### refactor
 - 修改获取PluginX单例的函数名: `GetPluginBus` -> `GetPluginX`;
-- 修改`PluginBus`名称为 `PluginsX`;
+- 修改 `PluginBus` 名称为 `PluginsX`;
+- 修改 内置插件 `base_unloader` 插件名称为 `coin`;
+- 将 `AtomicDropDB` 的逻辑转交给 内置插件 `coin` 执行；
 
 ### 下个版本代办
 功能	状态
