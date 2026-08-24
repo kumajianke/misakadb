@@ -13,12 +13,14 @@ description: 一些更新导致的改动
 ### fixed
 - Windows环境中，强制落盘目录导致无权限的Bug;
 - Windows环境中，部分场景下，删除数据库无权限的提醒;
+- Windows环境中，内置coin插件`OnRemoveFolder`删除被打开的目录导致出现的问题;
 
 ### feature
 - 实现 `TaskCombo`、`AddTaskCombo` 等业务函数;
 - 实现删除数据库逻辑, 并挂载给 `TinyDB` 引擎;
 - 修改内置库 `atoimc` 库名称为 `atomicX`;
 - `engine.NewTinyEngine`
+
 ### chore
 - 加入更新日志
 
