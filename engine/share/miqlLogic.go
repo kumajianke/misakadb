@@ -17,6 +17,7 @@ DESCRIPTION
 func MiqlCreateDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnContext) error {
 	if msonParse.Active != "cre-dat" {
 		return errors.New("Error Dispatch!")
+
 	}
 
 	engineName := msonParse.Engine // 获取到对应的引擎名字
