@@ -15,3 +15,8 @@ func AtomicDropDB(dbname string) error {
 	}
 	return nil
 }
+
+// TODO 原子:  创建数据库操作
+func AtomicCreateDB(dbname string) error {
+	return nil
+}

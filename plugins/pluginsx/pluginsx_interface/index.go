@@ -8,3 +8,4 @@ type FuncTaskTypeAdd = func(allTaskTypelst []tasktype.TaskType) ([]tasktype.Task
 type FuncTaskTypeAction = func(taskType tasktype.TaskType, params []string) error
 type FuncTaskTypeRoll = func(taskType tasktype.TaskType, params []string) error
 type FuncTaskCombo = func(params []string) (error, string)
+type AfterTask = func() (error, string)

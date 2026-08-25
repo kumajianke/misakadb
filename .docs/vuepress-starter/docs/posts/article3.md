@@ -127,3 +127,6 @@ func Register() error {
 #### pluginsx
 `pluginsx` 是 `Misaka` 用于管理插件上下的包，插件注册的所有内容都放在了 `pluginsx.PluginsX{}` 对象上。其中PluginsX是单例存在的，使用函数 `GetPluginsX` 获取唯一引用。
 
+## v0.1.9新增
+### AfterTask
+其实也是和TaskType一样的有对应的 `TaskTypeAction`\\`TaskTypeRoll`

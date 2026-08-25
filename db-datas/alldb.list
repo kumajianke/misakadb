@@ -14,5 +14,9 @@
   {
     "db-name": "xx",
     "db-engine": "TinyDB"
+  },
+  {
+    "db-name": "xxxaa",
+    "db-engine": "TinyDB"
   }
 ]

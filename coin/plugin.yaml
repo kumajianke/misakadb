@@ -1,4 +1,4 @@
-name: "misaka basic mode on v0.1.8@misaka"
+name: "misaka basic mode on v0.1.9@misaka"
 boot: "./register.go/Register()"
-version: "v0.1.8"
+version: "v0.1.9"
 descript: "basic offcial built-in plugin of misaka,  offers some tasktype、combo etc. Don't to remove it"

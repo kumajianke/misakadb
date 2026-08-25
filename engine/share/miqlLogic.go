@@ -67,6 +67,7 @@ func MiqlDropDB(msonParse *mson.MsonParse, serviceContext *context.ServiceConnCo
 		serviceContext.Send("[err]" + err.Error())
 		return err
 	}
+	// 是否存在数据库
 
 	// 执行操作
 	if err := dbEngine.RemoveDB(dbname); err != nil {

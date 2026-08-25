@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/rand"
 	eventbus "misakadb/atomic/EventBus"
 	tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
@@ -207,12 +208,17 @@ PARAMS
 	ID 任务ID 通过AddTask获取
 */
 func (this *AtomicWorkCenter) NoSafeRemoveTask(taskId string) *Task {
+	clilog.Info(fmt.Sprintf("[info] task: %s is remove in taskmap", taskId))
 	task, _ := this.TasksMap.LoadAndDelete(taskId)
 	return task
 }
 
+/**
+* 回滚任务直到结束
+ */
 func (this *AtomicWorkCenter) CancleTask(taskId string) *Task {
 	task := this.GetTask(taskId)
+
 	if task == nil {
 		return nil
 	}
@@ -279,6 +285,7 @@ func (this *AtomicWorkCenter) DoSustain(taskId string) (error, bool) {
 	for task.TaskCurrentIndex < len(task.TaskBooks) {
 		err := this.DoNext(taskId) // 执行当前任务的下一个作业
 		if err != nil {
+			// 程序中途报错 进行回滚
 			clilog.Error(err)
 			this.CancleTask(taskId) // 回滚任务
 			return err, false

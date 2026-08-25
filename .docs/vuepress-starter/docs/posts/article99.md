@@ -11,9 +11,9 @@ description: 一些更新导致的改动
 ## V0.1.8
 :::tip 常规更新
 ### fixed
-- Windows环境中，强制落盘目录导致无权限的Bug;
-- Windows环境中，部分场景下，删除数据库无权限的提醒;
-- Windows环境中，内置coin插件`OnRemoveFolder`删除被打开的目录导致出现的问题;
+- 修复Windows环境中，强制落盘目录导致无权限的Bug;
+- 修复Windows环境中，部分场景下，删除数据库提醒无权限的问题;
+- 修复Windows环境中，内置coin插件`OnRemoveFolder`删除已被打开的目录导致出现的问题;
 
 ### feature
 - 实现 `TaskCombo`、`AddTaskCombo` 等业务函数;
@@ -30,16 +30,29 @@ description: 一些更新导致的改动
 - 修改 内置插件 `base_unloader` 插件名称为 `coin`;
 - 将 `AtomicDropDB` 的逻辑转交给 内置插件 `coin` 执行；
 
-### 下个版本代办
-功能	状态
-正常删除目录	部分完成，实际是改名
-正常失败回滚	基本有
-删除后的物理清理	未完成
-alldb.list 同步删除	未完成
-程序中断后加载任务	已完成
-程序启动后自动继续任务	未完成
-删除动作中断后的准确恢复	未完成
-回滚失败后的任务保留	未完成
-成功任务清理	未完成
-Windows 目录同步	已处理
+
+:::
+
+## V0.1.9
+:::tip 常规更新
+### fixed
+
+### feature
+- `judgment`清道夫功能，物理删除任务完成状态的所有任务。
+- `pluginx` 的AfterTask的支持，可以在任务完成之后执行指定内容（必须执行的任务）
+- `OnRemoveFolder` 
+
+### chore
+
+### refactor
+
+
+:::
+
+:::
+
+## TODO LIST
+- 【coin】修改文件的`TaskType`及其相关函数
+- 【coin】创建文件的`TaskType`及其相关函数
+
 :::

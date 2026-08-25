@@ -5,11 +5,11 @@ network:
     retry_count: 3
     retry_delay: 30
 service:
-    version: 0.1.8
+    version: 0.1.9
     hide_info: false
     debug: true
 private:
     storage:
         path: ./db-datas
         plugins:
-            - misaka basic mode on v0.1.8@misaka |dir=coin
+            - misaka basic mode on v0.1.9@misaka |dir=coin

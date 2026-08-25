@@ -189,10 +189,6 @@ func RegisterPluginsTaskCombo(combo_name string, combo_func pluginsxInterface.Fu
 	return nil
 }
 
-/*
- TODO
-*/
-
 func GetPluginsTaskCombo(combo_name string) (pluginsXInterface.FuncTaskCombo, error) {
 	pluginx := pluginsX.GetPluginsX()
 	combo, ok := pluginx.TaskCombo.Load(combo_name)
@@ -200,4 +196,22 @@ func GetPluginsTaskCombo(combo_name string) (pluginsXInterface.FuncTaskCombo, er
 		return nil, errors.New("No such as the key in pluginx.TaskCombo!")
 	}
 	return combo, nil
+}
+
+func RegisterPluginsAfterTask(after_task tasktype.TaskType, after_func pluginsxInterface.AfterTask) error {
+	pluginsx := pluginsX.GetPluginsX()
+	if _, ok := pluginsx.AfterTasks.Load(after_task); ok {
+		return fmt.Errorf("has duplicate combo name: %s", after_task)
+	}
+	pluginsx.AfterTasks.Store(after_task, after_func)
+	return nil
+}
+
+func GetPluginsAfterTask(after_task_name tasktype.TaskType) (pluginsxInterface.AfterTask, error) {
+	pluginx := pluginsX.GetPluginsX()
+	after_task, ok := pluginx.AfterTasks.Load(after_task_name)
+	if !ok {
+		return nil, errors.New("No such as the key in pluginx.TaskCombo!")
+	}
+	return after_task, nil
 }

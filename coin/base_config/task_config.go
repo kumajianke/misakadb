@@ -3,7 +3,7 @@ package baseconfig
 import tasktype "misakadb/atomic/atomicWorkCenter/TaskType"
 
 const (
-	ModName = "misaka basic mode on v0.1.8@misaka"
+	ModName = "misaka basic mode on v0.1.9@misaka"
 )
 const (
 	TaskRemoveFile   tasktype.TaskType = "remove_file"

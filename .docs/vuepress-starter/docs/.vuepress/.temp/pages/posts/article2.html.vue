@@ -95,6 +95,8 @@
 <p><code v-pre>Combo</code> 有连招之译，<code v-pre>TaskCombo</code> 就是对一个完整的业务进行打包组合成一个特殊的Task, 如：删除数据库、查询数据库等。</p>
 <h5 id="插件支持" tabindex="-1"><a class="header-anchor" href="#插件支持"><span>插件支持</span></a></h5>
 <p>任务中心支持用户自定义作业本的执行方式，用户可以通过实现<code v-pre>TaskBooks</code>的<code v-pre>TaskType</code>来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。</p>
+<h3 id="aftertask-v0-1-9" tabindex="-1"><a class="header-anchor" href="#aftertask-v0-1-9"><span>AfterTask(V0.1.9)</span></a></h3>
+<p>在任务之后执行的任务，实际上也就是TaskType，需要由原子中心手动放在其他TaskType之后的任务</p>
 </div></template>
 
 

@@ -72,6 +72,7 @@ func RollRemoveFile(taskType tasktype.TaskType, params []string) error {
 	return filesafe.Fsync(only_path)
 }
 
+// 标记为文件为删除
 func OnRemoveFolder(taskType tasktype.TaskType, params []string) error {
 	if len(params) != 1 {
 		return errors.New("Argument error: remove folder requires one path")
@@ -88,16 +89,23 @@ func OnRemoveFolder(taskType tasktype.TaskType, params []string) error {
 	new_path := filepath.Join(parent, "MisakaRemove."+name)
 
 	f, err := os.Open(new_path)
+
 	if err == nil {
 		// 如果文件已经存在那里把她删除掉
 		f.Close()
 		clilog.Warning("[Warning] The cache generated for the deleted file conflicts with the cache of the historical file, now remove the history")
-		os.RemoveAll(new_path)
+		os.Remove(new_path)
 	}
 
-	if err := os.Rename(path, new_path); err != nil {
-		clilog.Error("rename the folder error:" + err.Error())
-		return err
+	f, err = os.Open(path)
+
+	if err == nil {
+		if err := os.Rename(path, new_path); err != nil {
+			clilog.Error("rename the folder error:" + err.Error() + path + "->" + new_path)
+			return err
+		}
+	} else {
+		return fmt.Errorf("not found the database which on the %s path! ", path)
 	}
 
 	if shares.IsWindows() {

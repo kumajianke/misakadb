@@ -123,3 +123,6 @@ type FuncTaskTypeRoll = func(taskType tasktype.TaskType, params []string) error
 
 ##### 插件支持
 任务中心支持用户自定义作业本的执行方式，用户可以通过实现`TaskBooks`的`TaskType`来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。
+
+### AfterTask(V0.1.9)
+在任务之后执行的任务，实际上也就是TaskType，需要由原子中心手动放在其他TaskType之后的任务
