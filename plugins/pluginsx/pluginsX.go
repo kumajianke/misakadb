@@ -22,7 +22,6 @@ type PluginsX struct {
 	TaskTypeRoll    xsync.MapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeRoll]   // 不同对应的任务类型的回滚句柄
 	TaskAliasDocs   xsync.MapOf[string, TaskAliasDoc]                                    // 别名说明文档
 	TaskCombo       xsync.MapOf[string, pluginsXInterface.FuncTaskCombo]                 // 不同对应的混招
-	AfterTasks      xsync.MapOf[tasktype.TaskType, pluginsXInterface.AfterTask]          // 任务结束之后需要执行的内容
 }
 
 type TaskAliasDoc struct {
@@ -45,7 +44,6 @@ func GetPluginsX() *PluginsX {
 			TaskTypeRoll:    *xsync.NewMapOf[tasktype.TaskType, pluginsXInterface.FuncTaskTypeRoll](),
 			TaskAliasDocs:   *xsync.NewMapOf[string, TaskAliasDoc](),
 			TaskCombo:       *xsync.NewMapOf[string, pluginsXInterface.FuncTaskCombo](),
-			AfterTasks:      *xsync.NewMapOf[tasktype.TaskType, pluginsXInterface.AfterTask](),
 		}
 	})
 	return &pluginsX

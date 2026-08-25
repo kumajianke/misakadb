@@ -18,7 +18,7 @@ func TestTask() {
 	if !ok {
 		clilog.Error("[ERROR] can not get the tasktype!")
 	}
-	task.TaskBooks = tasktype.NewShipBuilder().Add(
+	task.TaskBooks = tasktype.NewTaskBooksShipBuilder().Add(
 		remove_file,
 		"xx.file",
 	).Build()

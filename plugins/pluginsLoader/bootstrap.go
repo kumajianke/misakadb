@@ -10,7 +10,7 @@ var builtinPluginRegisters = map[string]func() error{}
 
 // RegisterBuiltinPlugin 注册一个内建插件的启动注册函数。
 func RegisterBuiltinPlugin(pluginName string, register func() error) {
-        pluginName = normalizePluginName(pluginName)
+	pluginName = normalizePluginName(pluginName)
 	if pluginName == "" || register == nil {
 		return
 	}
@@ -25,7 +25,7 @@ func BootstrapPlugins() error {
 	}
 
 	for _, pluginName := range cfg.Private.Storage.Plugins {
-                normalizedPluginName := normalizePluginName(pluginName)
+		normalizedPluginName := normalizePluginName(pluginName)
 		if normalizedPluginName == "" {
 			continue
 		}

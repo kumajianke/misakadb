@@ -42,7 +42,7 @@ func ComboRemoveDatabase(params []string) (error, string) {
 	}
 	defer unlock()
 
-	taskbook := tasktype.NewShipBuilder().Add(baseconfig.TaskRemoveFolder, db_path).Build()
+	taskbook := tasktype.NewTaskBooksShipBuilder().Add(baseconfig.TaskRemoveFolder, db_path).Build()
 	task := atomic_work_center.NewTask(taskbook)
 	ok, task_id := awc.AddTask(task, 3)
 	if !ok {

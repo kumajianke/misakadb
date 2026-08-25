@@ -39,13 +39,14 @@ description: 一些更新导致的改动
 
 ### feature
 - `judgment`清道夫功能，物理删除任务完成状态的所有任务。
-- `pluginx` 的AfterTask的支持，可以在任务完成之后执行指定内容（必须执行的任务）
+- `pluginx` 的 `AfterTask` 的支持，可以在任务完成之后执行指定内容（必须执行的任务）
+  - [tip] 后期开发过程中删除转为`AddAfter`的支持
 - `OnRemoveFolder` 
 
 ### chore
 
 ### refactor
-
+- 重构了关于 `TaskBooksShipBuilder` 相关的类变量的名称(旧名称为: TaskTypeBuilder、TaskTypeShipBuilder)
 
 :::
 

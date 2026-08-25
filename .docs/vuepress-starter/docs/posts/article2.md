@@ -21,7 +21,7 @@ atomic := atomic_work_center.GetAtomicWorkCenter();
 // 创建一个原子任务中心
 task = atomic_work_center.NewTask(nil);
 // 创建一个空任务
-task.TaskBooks = tasktype.NewShipBuilder()
+task.TaskBooks = tasktype.NewTaskBooksShipBuilder()
 	.Add(tasktype.TaskModFile, "xxx.filename.txt")
 	.Build();
 // 构建一个任务体，任务体包含需要原子执行的多个任务子作业
@@ -125,4 +125,4 @@ type FuncTaskTypeRoll = func(taskType tasktype.TaskType, params []string) error
 任务中心支持用户自定义作业本的执行方式，用户可以通过实现`TaskBooks`的`TaskType`来定义自己的作业类型。你可以查看文档进行实现插件。当前所有TaskType的功能实现都是插件支持的。
 
 ### AfterTask(V0.1.9)
-在任务之后执行的任务，实际上也就是TaskType，需要由原子中心手动放在其他TaskType之后的任务
+在任务之后执行的任务，实际上也就是TaskType，需要由原子中心手动放在其他TaskType之后的任务，通过 `TaskBooksShipBuilder` 的 `AddAfter` 进行添加。
