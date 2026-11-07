@@ -205,6 +205,9 @@ client.close()
 | `failure_count` | 失败次数 |
 | `loss_rate` | 丢包率 |
 
+## 支持操作系统
+Windows、Linux、Macos
+
 ## 许可证
 
 本项目基于 `木兰宽松许可证` 许可证开源。详见 [LICENSE](./LICENSE) 文件。
